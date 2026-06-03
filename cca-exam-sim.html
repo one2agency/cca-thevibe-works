@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Certified Architect — Симулятор екзамену</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ece0; --paper2:#ece2d2; --card:#fbf7ef; --ink:#231d16; --ink2:#5e5346;
+    --line:#d8ccba; --accent:#c2511f; --accent2:#9a3f18;
+    --good:#3f7d4e; --goodbg:#e6efe2; --bad:#b23a32; --badbg:#f4e3e0;
+    --gold:#b8862b; --shadow:0 1px 0 rgba(0,0,0,.04),0 12px 30px -18px rgba(40,28,14,.45);
+    --mono:'JetBrains Mono',monospace; --serif:'Newsreader',Georgia,serif; --disp:'Fraunces',serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 88% -8%, #f7eede 0%, transparent 60%),
+      radial-gradient(800px 600px at -5% 105%, #efe3cf 0%, transparent 55%),
+      var(--paper);
+    color:var(--ink); font-family:var(--serif); font-size:17px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:30px 22px 80px}
+  code,.mono{font-family:var(--mono); font-size:.86em; background:#e9ddc8; padding:1px 6px; border-radius:5px; color:#5a3a1a; word-break:break-word}
+  h1,h2,h3{font-family:var(--disp); font-weight:600; letter-spacing:-.01em; line-height:1.1; margin:0}
+  .accentword{color:var(--accent)}
+  a{color:var(--accent)}
+  button{font-family:var(--serif); cursor:pointer}
+  .btn{
+    display:inline-flex; align-items:center; gap:9px; border:1px solid var(--ink);
+    background:var(--ink); color:var(--paper); padding:13px 22px; border-radius:11px;
+    font-size:17px; font-weight:500; transition:transform .12s ease, box-shadow .12s ease;
+    box-shadow:var(--shadow);
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line)}
+  .btn.ghost:hover{background:#0000000a}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow)}
+  .tag{display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:4px 9px; border-radius:999px; background:#e9ddc8; color:#6b4a22}
+  .muted{color:var(--ink2)}
+
+  /* ---- HOME ---- */
+  .brandline{font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent2)}
+  .hero h1{font-size:clamp(34px,6vw,58px); margin:10px 0 6px}
+  .hero p.sub{font-size:19px; color:var(--ink2); max-width:62ch; margin:8px 0 0}
+  .factrow{display:flex; flex-wrap:wrap; gap:10px; margin:26px 0 8px}
+  .fact{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:12px 16px; box-shadow:var(--shadow); flex:1; min-width:140px}
+  .fact b{font-family:var(--disp); font-size:26px; display:block; line-height:1}
+  .fact span{font-size:13px; color:var(--ink2)}
+  .modegrid{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:30px}
+  @media(max-width:680px){.modegrid{grid-template-columns:1fr}}
+  .mode{padding:26px; cursor:pointer; transition:transform .14s ease, border-color .14s; position:relative; overflow:hidden}
+  .mode:hover{transform:translateY(-3px); border-color:var(--accent)}
+  .mode h3{font-size:24px; margin-bottom:8px}
+  .mode .ic{font-family:var(--disp); font-size:40px; color:var(--accent); line-height:1; margin-bottom:14px}
+  .mode p{color:var(--ink2); margin:0 0 16px; font-size:15.5px}
+  .domlist{margin-top:34px}
+  .domrow{display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid var(--line)}
+  .domrow:last-child{border-bottom:none}
+  .bar{height:9px; background:#e3d6c0; border-radius:6px; flex:1; overflow:hidden; min-width:80px}
+  .bar > i{display:block; height:100%; background:linear-gradient(90deg,var(--accent),#e0793f); border-radius:6px}
+  .domname{flex:0 0 auto; width:auto}
+
+  /* ---- CONFIG ---- */
+  .opts-inline{display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 4px}
+  .chip{border:1px solid var(--line); background:var(--card); padding:9px 15px; border-radius:10px; font-size:15px}
+  .chip.on{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+  .chip.on.accent{background:var(--accent); border-color:var(--accent); color:#fff}
+
+  /* ---- EXAM RUN ---- */
+  .topbar{position:sticky; top:0; z-index:30; background:rgba(243,236,224,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); margin:-30px -22px 22px; padding:14px 22px}
+  .topbar .inner{max-width:980px; margin:0 auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+  .timer{font-family:var(--mono); font-size:21px; font-weight:600; padding:6px 14px; border-radius:10px; background:var(--card); border:1px solid var(--line)}
+  .timer.warn{color:#fff; background:var(--accent); border-color:var(--accent)}
+  .timer.crit{color:#fff; background:var(--bad); border-color:var(--bad); animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.65}}
+  .progresswrap{flex:1; min-width:140px}
+  .pbar{height:8px; background:#e3d6c0; border-radius:5px; overflow:hidden}
+  .pbar > i{display:block; height:100%; background:var(--ink); transition:width .3s}
+
+  .scenario{background:#efe5d3; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:12px; padding:14px 18px; margin-bottom:18px}
+  .scenario .tag{margin-bottom:6px}
+  .scenario p{margin:6px 0 0; font-size:15.5px; color:var(--ink2)}
+
+  .qcard{padding:30px}
+  .qmeta{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+  .qnum{font-family:var(--mono); font-size:13px; color:var(--ink2)}
+  .qtext{font-size:20px; line-height:1.45; margin:6px 0 22px; font-family:var(--disp); font-weight:500}
+  .answers{display:flex; flex-direction:column; gap:11px}
+  .ans{display:flex; gap:14px; align-items:flex-start; padding:15px 17px; border:1px solid var(--line); border-radius:13px; background:var(--card); transition:border-color .12s, background .12s; cursor:pointer}
+  .ans:hover{border-color:var(--accent)}
+  .ans .key{font-family:var(--mono); font-weight:600; flex:0 0 auto; width:26px; height:26px; border-radius:7px; background:#e9ddc8; color:#6b4a22; display:flex; align-items:center; justify-content:center; font-size:14px; margin-top:1px}
+  .ans .txt{flex:1; font-size:16px; line-height:1.45}
+  .ans.sel{border-color:var(--ink); background:#efe7d8}
+  .ans.sel .key{background:var(--ink); color:var(--paper)}
+  .ans.correct{border-color:var(--good); background:var(--goodbg)}
+  .ans.correct .key{background:var(--good); color:#fff}
+  .ans.wrong{border-color:var(--bad); background:var(--badbg)}
+  .ans.wrong .key{background:var(--bad); color:#fff}
+  .ans.locked{cursor:default}
+  .ans.locked:hover{border-color:var(--line)}
+  .ans.locked.correct:hover{border-color:var(--good)}
+
+  .explain{margin-top:18px; border-radius:13px; padding:16px 18px; background:#eef1e8; border:1px solid #cfd9c2}
+  .explain.bad{background:#f6e8e5; border-color:#e6c5bf}
+  .explain .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--good); margin-bottom:6px}
+  .explain.bad .lbl{color:var(--bad)}
+  .explain p{margin:0; font-size:15.5px; line-height:1.5}
+
+  .navrow{display:flex; justify-content:space-between; gap:12px; margin-top:24px; align-items:center}
+  .markbtn{border:1px solid var(--line); background:var(--card); padding:10px 16px; border-radius:10px; font-size:14px; color:var(--ink2)}
+  .markbtn.on{background:var(--gold); border-color:var(--gold); color:#fff}
+
+  .palette{display:flex; flex-wrap:wrap; gap:7px; margin-top:22px; padding:18px; }
+  .pdot{width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--card); font-family:var(--mono); font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative}
+  .pdot.answered{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+  .pdot.current{outline:2px solid var(--accent); outline-offset:2px}
+  .pdot.marked::after{content:''; position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:var(--gold)}
+
+  /* ---- RESULTS ---- */
+  .scorehero{text-align:center; padding:40px 26px}
+  .ring{width:190px; height:190px; margin:6px auto 14px}
+  .verdict{font-family:var(--disp); font-size:30px; margin-top:4px}
+  .verdict.pass{color:var(--good)} .verdict.fail{color:var(--bad)}
+  .scaled{font-family:var(--disp); font-size:64px; line-height:1; font-weight:600}
+  .resgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px}
+  @media(max-width:680px){.resgrid{grid-template-columns:1fr}}
+  .minicard{padding:18px}
+  .minicard h3{font-size:16px; font-family:var(--mono); font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--ink2); margin-bottom:14px; font-size:12px}
+  .dscore{display:flex; align-items:center; gap:12px; margin-bottom:13px}
+  .dscore .n{font-family:var(--mono); font-size:13px; flex:0 0 52px; text-align:right; color:var(--ink2)}
+  .reviewfilter{display:flex; gap:8px; flex-wrap:wrap; margin:24px 0 6px}
+  .footnote{font-size:13px; color:var(--ink2); margin-top:10px; line-height:1.5}
+  .center{text-align:center}
+  .spin{display:inline-block; animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================
+   DATA: domains, scenarios, question bank (95 questions)
+   q-fields: id, s(scenario 1-6), d(domain 1-5), q, opts[4], a(correct idx), ex
+   ============================================================ */
+const DOMAINS = {
+  1:{name:"Agentic Architecture & Orchestration", w:27},
+  2:{name:"Tool Design & MCP Integration", w:18},
+  3:{name:"Claude Code Configuration & Workflows", w:20},
+  4:{name:"Prompt Engineering & Structured Output", w:20},
+  5:{name:"Context Management & Reliability", w:15},
+};
+const SCEN = {
+  1:{t:"Customer Support Resolution Agent", p:"Агент підтримки на Claude Agent SDK обробляє повернення, спори по платежах і питання акаунтів. Доступ до бекенду через MCP-інструменти get_customer, lookup_order, process_refund, escalate_to_human. Ціль — 80%+ first-contact resolution."},
+  2:{t:"Code Generation with Claude Code", p:"Команда використовує Claude Code для генерації коду, рефакторингу, дебагу й документації. Потрібна інтеграція у воркфлоу: custom slash commands, CLAUDE.md, та розуміння plan mode vs direct execution."},
+  3:{t:"Multi-Agent Research System", p:"Coordinator-агент делегує спеціалізованим subagent'ам: пошук у вебі, аналіз документів, синтез і генерація звіту. Система готує повні звіти з цитуванням джерел."},
+  4:{t:"Developer Productivity with Claude", p:"Агент допомагає інженерам досліджувати незнайомі кодбази, розбирати legacy, генерувати boilerplate. Використовує built-in tools (Read, Write, Bash, Grep, Glob) та MCP-сервери."},
+  5:{t:"Claude Code for Continuous Integration", p:"Claude Code інтегрований у CI/CD: автоматичні code review, генерація тестів, фідбек на pull request'и. Потрібні промпти з actionable-фідбеком і мінімумом false positives."},
+  6:{t:"Structured Data Extraction", p:"Система витягує дані з неструктурованих документів, валідує через JSON-схеми й тримає високу точність. Має акуратно обробляти edge cases й інтегруватися з downstream-системами."},
+};
+
+const QB = [
+/* ===================== SCENARIO 1 ===================== */
+{id:"S1Q1",s:1,d:1,q:`Дані продакшену показують: у 12% випадків агент пропускає get_customer і викликає lookup_order лише за ім'ям клієнта, що інколи призводить до помилкової ідентифікації акаунта й неправильних повернень. Яка зміна найефективніше вирішить цю проблему надійності?`,
+opts:[`Додати programmatic prerequisite, який блокує виклики lookup_order і process_refund, доки get_customer не поверне верифікований customer ID`,`Підсилити system prompt вимогою, що верифікація через get_customer обов'язкова перед будь-якими операціями із замовленнями`,`Додати few-shot приклади, де агент завжди викликає get_customer першим, навіть коли клієнт сам назвав номер замовлення`,`Впровадити routing-класифікатор, який вмикає лише підмножину інструментів під тип запиту`],a:0,
+ex:`Коли критична бізнес-логіка вимагає певної послідовності (верифікація перед поверненням коштів), programmatic enforcement дає детерміновані гарантії, яких prompt-підходи (B, C) дати не можуть через ненульову ймовірність недотримання. D вирішує доступність інструментів, а не їх порядок.`},
+
+{id:"S1Q2",s:1,d:2,q:`Логи показують, що агент часто кличе get_customer на запити про замовлення (напр. «перевір моє замовлення #12345») замість lookup_order. Обидва інструменти мають мінімальні описи («Retrieves customer information» / «Retrieves order details») і приймають схожі формати ідентифікаторів. Який найефективніший перший крок?`,
+opts:[`Розширити опис кожного інструмента: формати входу, приклади запитів, edge cases і межі застосування відносно схожих інструментів`,`Додати 5–8 few-shot прикладів у system prompt, що скеровують order-запити на lookup_order`,`Реалізувати routing-шар, що парсить ввід і наперед обирає інструмент за ключовими словами`,`Об'єднати обидва інструменти в один lookup_entity, що сам визначає бекенд`],a:0,
+ex:`Описи інструментів — основний механізм вибору для LLM. За мінімальних описів моделі бракує контексту, щоб розрізнити схожі інструменти. B додає токени, не усуваючи причину; C — over-engineering, що обходить розуміння моделі; D — валідна, але важча архітектурна зміна, ніж потрібно для «першого кроку».`},
+
+{id:"S1Q3",s:1,d:5,q:`Агент дає лише 55% first-contact resolution при цілі 80%. Логи показують: він ескалює прості кейси (стандартні заміни з фото-доказом), але намагається сам обробляти складні ситуації з винятками з політики. Як найкраще покращити калібрування ескалації?`,
+opts:[`Додати у system prompt явні критерії ескалації з few-shot прикладами «коли ескалювати vs вирішувати самостійно»`,`Просити агента самооцінювати confidence (1–10) і автоматично маршрутизувати до людини нижче порогу`,`Розгорнути окрему classifier-модель на історичних тікетах, що передбачає потребу ескалації`,`Додати sentiment-аналіз і ескалювати при перевищенні порогу негативу`],a:0,
+ex:`Корінь проблеми — нечіткі межі рішення; явні критерії з прикладами б'ють прямо в нього і є пропорційним першим кроком. Самооцінка confidence (B) погано калібрована — агент уже впевнений на складних кейсах. C — over-engineering. D вирішує іншу проблему: sentiment не корелює зі складністю кейсу.`},
+
+{id:"S1Q4",s:1,d:1,q:`Політика вимагає, щоб повернення понад $500 НІКОЛИ не виконувались автоматично, а йшли на людину. Зараз ця вимога описана в system prompt, але зрідка порушується. Що дасть детерміновану гарантію?`,
+opts:[`Hook, що перехоплює вихідний виклик process_refund і блокує суми понад $500, перенаправляючи на escalate_to_human`,`Чіткіше формулювання в system prompt із капіталізованим NEVER і повторенням правила`,`Few-shot приклади, що демонструють відмову від повернень понад $500`,`Зниження temperature, щоб модель суворіше дотримувалась інструкцій`],a:0,
+ex:`Коли бізнес-правило вимагає гарантованого дотримання, обирають hook (tool-call interception) над prompt-based підходами. B, C, D усі лишаються ймовірнісними й мають ненульовий рівень збоїв на фінансово значущих діях.`},
+
+{id:"S1Q5",s:1,d:2,q:`Усі MCP-інструменти повертають при збої однаковий рядок «Operation failed». Через це агент однаково реагує і на таймаут, і на порушення політики, і на невалідний ввід. Як це виправити?`,
+opts:[`Повертати структуровані метадані помилки: errorCategory (transient/validation/permission), isRetryable та людиночитний опис`,`Додати у system prompt інструкцію завжди повторювати спробу при будь-якому «Operation failed»`,`Логувати помилки на бекенді детальніше, лишивши агенту той самий загальний рядок`,`Підвищити timeout усіх інструментів, щоб помилки траплялись рідше`],a:0,
+ex:`Уніфіковані помилки не дають агенту приймати правильні рішення про відновлення. Структуровані метадані (категорія, чи можна ретраїти, опис) дозволяють ретраїти transient, пояснювати business-помилки клієнту й не марнувати спроби на non-retryable. B небезпечно ретраїть усе; C/D не міняють те, що бачить агент.`},
+
+{id:"S1Q6",s:1,d:5,q:`lookup_order повертає 40+ полів на замовлення, з яких для типового кейсу повернення релевантні лише ~5. У довгих діалогах ці виводи накопичуються й з'їдають контекст. Який підхід найкращий?`,
+opts:[`Обрізати verbose-виводи інструмента до релевантних полів ще до того, як вони потраплять у контекст`,`Збільшити max_tokens, щоб модель умістила всі поля`,`Періодично робити progressive summarization усієї історії, включно з виводами замовлень`,`Вимкнути lookup_order і просити клієнта диктувати деталі замовлення вручну`],a:0,
+ex:`Виводи інструментів накопичуються й споживають токени непропорційно до релевантності. Тримання лише потрібних полів — пряме рішення. Збільшення max_tokens (B) не стосується контексту-вікна. Агресивна сумаризація (C) ризикує втратити числа/дати. D погіршує UX.`},
+
+{id:"S1Q7",s:1,d:5,q:`get_customer повертає кількох клієнтів, що збігаються за наданим іменем. Як агенту коректно вчинити?`,
+opts:[`Попросити додатковий ідентифікатор (email, номер замовлення), а не обирати збіг за евристикою`,`Обрати найновіший за датою створення акаунт як найімовірніший`,`Обрати акаунт з найбільшою кількістю замовлень`,`Об'єднати всі збіги в один профіль і продовжити`],a:0,
+ex:`Кілька збігів вимагають уточнення (запиту додаткових ідентифікаторів), а не евристичного вибору, бо помилкова ідентифікація веде до неправильних дій з чужим акаунтом.`},
+
+{id:"S1Q8",s:1,d:1,q:`Клієнт пише одним повідомленням одразу про три речі: повернення коштів за пошкоджений товар, зміну адреси доставки та скаргу на затримку. Яка стратегія обробки найкраща?`,
+opts:[`Декомпозувати запит на окремі item'и, дослідити кожен (за потреби паралельно) на спільному контексті, тоді синтезувати єдину відповідь`,`Обробити лише перше питання (повернення), а решту попросити надіслати окремими зверненнями`,`Ескалювати на людину, бо багатоскладові запити поза межами агента`,`Відповісти загально, не викликаючи інструменти, щоб не плутати контексти`],a:0,
+ex:`Багатоскладові звернення декомпозують на окремі concern'и, досліджують кожен на спільному контексті й зводять у єдину резолюцію. Інші варіанти або втрачають частину запиту, або зайво ескалюють.`},
+
+{id:"S1Q9",s:1,d:5,q:`На початку діалогу клієнт прямо й однозначно вимагає з'єднати його з живим оператором. Як вчинити агенту?`,
+opts:[`Виконати ескалацію негайно, без спроби спершу самостійно розслідувати кейс`,`Спершу спробувати вирішити питання, і лише якщо не вдасться — ескалювати`,`Запитати причину вимоги й переконати клієнта, що агент впорається`,`Підняти confidence-поріг і продовжити автономно`],a:0,
+ex:`Явну вимогу клієнта про людину виконують негайно. Це відрізняється від ситуації, де питання просте — там можна запропонувати вирішити, ескалюючи лише якщо клієнт наполягає.`},
+
+{id:"S1Q10",s:1,d:1,q:`Різні MCP-інструменти повертають дати в різних форматах: get_customer — Unix timestamp, lookup_order — ISO 8601, а статус — числовим кодом. Це плутає модель при міркуванні. Який механізм найкращий для нормалізації?`,
+opts:[`PostToolUse hook, що нормалізує формати у виводах інструментів ще до того, як їх обробить модель`,`Інструкція в system prompt самостійно конвертувати всі формати дат`,`Окремий subagent, що переписує кожну відповідь інструмента`,`Few-shot приклади з різними форматами дат`],a:0,
+ex:`PostToolUse hook перехоплює результати інструментів і трансформує їх (нормалізація timestamp/ISO/кодів) до обробки моделлю — це детермінована нормалізація. Prompt/few-shot (B, D) лишаються ймовірнісними; окремий subagent (C) — надлишковий.`},
+
+{id:"S1Q11",s:1,d:5,q:`У довгих діалогах ви робите progressive summarization історії. Згодом помічаєте, що агент «забуває» точну суму повернення, дату покупки й обіцянки, дані клієнту. Як це виправити?`,
+opts:[`Витягувати транзакційні факти (суми, дати, номери замовлень, статуси) в окремий persistent «case facts» блок, що додається в кожен промпт поза сумаризованою історією`,`Повністю відмовитись від сумаризації й завжди слати всю історію`,`Сумаризувати агресивніше, щоб лишалось більше місця під нові факти`,`Зберігати факти лише в системі логування на бекенді`],a:0,
+ex:`Ризик progressive summarization — згортання чисел, відсотків, дат і очікувань клієнта у розмиті формулювання. Рішення — тримати точні транзакційні факти в persistent-блоці поза сумаризованою історією. B нереалістично за токенами; C погіршує проблему; D не доходить до моделі.`},
+
+{id:"S1Q12",s:1,d:1,q:`Ви реалізуєте agentic loop. Що має визначати, продовжувати виконувати інструменти чи завершити й показати фінальну відповідь?`,
+opts:[`stop_reason у відповіді: «tool_use» → виконати інструмент і продовжити; «end_turn» → завершити цикл`,`Наявність тексту в assistant-повідомленні: якщо є текст — завершити`,`Фіксований ліміт ітерацій як основний механізм зупинки`,`Парсинг фраз на кшталт «Done» / «Завершено» у відповіді моделі`],a:0,
+ex:`Керування циклом будують на stop_reason: продовжувати при «tool_use», завершувати при «end_turn». B, C, D — anti-patterns: перевірка тексту, жорсткий ліміт ітерацій чи парсинг natural-language сигналів ненадійні.`},
+
+{id:"S1Q13",s:1,d:2,q:`process_refund відхиляє запит, бо сума перевищує ліміт політики (бізнес-правило, не технічний збій). Що інструмент має повернути, щоб агент відреагував коректно?`,
+opts:[`isError з retriable:false та клієнт-дружнім поясненням причини відмови`,`Той самий формат, що й для таймауту, щоб агент спробував ще раз`,`Порожній успішний результат, щоб не турбувати клієнта`,`HTTP 500 без додаткових метаданих`],a:0,
+ex:`Порушення бізнес-правила слід позначати retriable:false і додавати зрозуміле пояснення, щоб агент комунікував коректно й не ретраїв марно. Формат таймауту (B) спровокує зайві спроби; порожній успіх (C) приховує помилку; голий 500 (D) не дає контексту.`},
+
+{id:"S1Q14",s:1,d:5,q:`Клієнт просить price-match під ціну конкурента. Політика описує лише коригування під власні попередні ціни магазину й нічого не каже про конкурентів. Що має зробити агент?`,
+opts:[`Ескалювати, бо політика мовчить/неоднозначна щодо саме цього запиту`,`Відмовити, бо якщо не написано — значить заборонено`,`Погодити price-match, бо явної заборони немає`,`Самостійно вигадати розумний відсоток знижки як компроміс`],a:0,
+ex:`Коли політика неоднозначна або мовчить щодо конкретного запиту — це тригер ескалації (policy gap), а не лише складність кейсу. Самостійне рішення (B, C, D) ризикує суперечити майбутній політиці.`},
+
+{id:"S1Q15",s:1,d:1,q:`Колега пропонує завершувати agentic loop, коли модель згенерувала текстову відповідь без виклику інструмента, АБО після 10 ітерацій «про всяк випадок». Чому це проблема?`,
+opts:[`Це anti-patterns: перевірка тексту й жорсткий ліміт ітерацій ненадійні; зупинку слід базувати на stop_reason == «end_turn»`,`Проблеми немає — це стандартний рекомендований підхід`,`Проблема лише в ліміті 10; з лімітом 50 підхід коректний`,`Текст треба парсити регулярками на ключові слова завершення — тоді надійно`],a:0,
+ex:`Парсинг тексту, ліміт ітерацій як основний стоп і перевірка наявності тексту — класичні anti-patterns. Коректне завершення — за stop_reason «end_turn». Зміна порогу (C) чи регулярки (D) не роблять підхід надійним.`},
+
+{id:"S1Q16",s:1,d:2,q:`Команда поступово дала агенту 18 інструментів. Тепер він почав плутатись у виборі й інколи бере не той інструмент. Який принцип допоможе найбільше?`,
+opts:[`Звузити набір інструментів до 4–5, релевантних ролі агента, бо надлишок збільшує складність рішення й знижує надійність вибору`,`Додати ще інструментів-«хелперів», щоб у моделі завжди був точний інструмент під кейс`,`Перейменувати всі 18 інструментів у коротші назви`,`Завжди форсувати tool_choice на перший інструмент у списку`],a:0,
+ex:`Завелика кількість інструментів (18 замість 4–5) деградує надійність вибору, бо зростає складність рішення. Звуження набору під роль — пряме рішення. Додавання інструментів (B) погіршує; перейменування (C) не міняє кількість; форсування першого (D) ламає логіку.`},
+
+/* ===================== SCENARIO 2 ===================== */
+{id:"S2Q1",s:2,d:3,q:`Ви хочете створити custom-команду /review, що запускає стандартний чек-лист код-рев'ю команди. Вона має бути доступна кожному розробнику після clone/pull репозиторію. Де створити файл команди?`,
+opts:[`У директорії .claude/commands/ у репозиторії проєкту`,`У ~/.claude/commands/ у домашній директорії кожного розробника`,`У файлі CLAUDE.md у корені проєкту`,`У .claude/config.json з масивом commands`],a:0,
+ex:`Project-scoped slash-команди зберігають у .claude/commands/ репозиторію — вони версіонуються й доступні всім після clone/pull. B — це особисті команди (не шеряться); CLAUDE.md (C) — для контексту, не для команд; D описує неіснуючий у Claude Code механізм.`},
+
+{id:"S2Q2",s:2,d:3,q:`Вам доручили реструктуризувати моноліт у мікросервіси: зміни в десятках файлів і рішення про межі сервісів та залежності модулів. Який підхід обрати?`,
+opts:[`Увійти в plan mode: дослідити кодбазу, зрозуміти залежності й спроєктувати підхід ще до змін`,`Почати з direct execution й міняти інкрементально, дозволивши реалізації виявити природні межі`,`Direct execution з повними наперед інструкціями, як саме структурувати кожен сервіс`,`Почати в direct execution і перемкнутись у plan mode лише якщо виникне несподівана складність`],a:0,
+ex:`Plan mode створений саме для масштабних змін, кількох валідних підходів та архітектурних рішень. Він дозволяє безпечно дослідити код перед комітом до змін. B ризикує дорогими переробками; C припускає готову відповідь без дослідження; D ігнорує, що складність уже задана вимогами.`},
+
+{id:"S2Q3",s:2,d:3,q:`Ви фіксите один баг у єдиному файлі з чітким stack trace, що прямо вказує на місце. Який режим оптимальний?`,
+opts:[`Direct execution — зміна добре зрозуміла й чітко обмежена за scope`,`Plan mode — будь-яка зміна коду потребує попереднього планування`,`Plan mode із залученням Explore subagent для повного аналізу кодбази`,`Спершу fork_session, потім direct execution`],a:0,
+ex:`Для простих, добре окреслених змін (single-file fix з чітким stack trace) пасує direct execution. Plan mode потрібен для архітектурних/багатофайлових задач, тож тут він був би надлишковим.`},
+
+{id:"S2Q4",s:2,d:3,q:`Новий член команди скаржиться, що Claude Code не застосовує командні інструкції, які працюють у всіх інших. Ви з'ясовуєте, що інструкції лежать у ~/.claude/CLAUDE.md одного з інженерів. У чому причина й виправлення?`,
+opts:[`User-level конфіг (~/.claude/CLAUDE.md) не шериться через version control; перенести інструкції у project-level (.claude/CLAUDE.md або кореневий CLAUDE.md)`,`Це баг кешу; новому інженеру треба перевстановити Claude Code`,`Інструкції треба продублювати в кожному ~/.claude/CLAUDE.md вручну для всіх`,`Перенести інструкції у .gitignore, щоб вони підхопились автоматично`],a:0,
+ex:`Налаштування user-level застосовуються лише до цього користувача й не шеряться через VCS. Командні стандарти мають бути project-level, щоб діяти на всіх. Ручне дублювання (C) некероване; .gitignore (D) узагалі виключає файл із репозиторію.`},
+
+{id:"S2Q5",s:2,d:3,q:`Ваш CLAUDE.md розрісся до сотень рядків і став важко підтримуваним. Який підхід рекомендований для модульності?`,
+opts:[`Розбити на тематичні файли у .claude/rules/ (напр. testing.md, api-conventions.md, deployment.md) або підключати зовнішні файли через @import`,`Стиснути файл, видаливши коментарі й пробіли`,`Перенести весь вміст у єдиний гігантський system prompt`,`Створити по копії повного CLAUDE.md у кожній піддиректорії`],a:0,
+ex:`Великий CLAUDE.md дробиться на тематичні файли у .claude/rules/ або підключається через @import-синтаксис для модульності. Стиснення (B) не вирішує підтримуваність; єдиний system prompt (C) і копії в кожній теці (D) лише погіршують.`},
+
+{id:"S2Q6",s:2,d:3,q:`Ви прозою описуєте бажану трансформацію коду, але Claude інтерпретує її щоразу по-різному. Що найефективніше комунікує очікування?`,
+opts:[`Надати 2–3 конкретні приклади вхід/вихід, що демонструють потрібну трансформацію`,`Переписати інструкцію ще детальнішою прозою з більшою кількістю прикметників`,`Підвищити max_tokens, щоб модель докладніше пояснювала кроки`,`Додати в кінці інструкції фразу «будь дуже точним»`],a:0,
+ex:`Коли прозовий опис трактується непослідовно, найдієвіше — конкретні приклади вхід/вихід. Більше прози (B), більший max_tokens (C) чи заклики «будь точним» (D) не усувають неоднозначності так, як приклади.`},
+
+{id:"S2Q7",s:2,d:5,q:`Під час тривалої сесії дослідження великої кодбази Claude починає давати непослідовні відповіді й посилатися на «типові патерни» замість конкретних класів, знайдених раніше. Як протидіяти цій деградації контексту?`,
+opts:[`Вести scratchpad-файл із ключовими знахідками й звертатися до нього в наступних питаннях`,`Просто перезапустити сесію з нуля при кожному новому питанні`,`Підвищити temperature, щоб відповіді стали різноманітнішими`,`Ігнорувати — це нормальна поведінка для довгих сесій`],a:0,
+ex:`У розширених сесіях контекст деградує (модель «зісковзує» на типові патерни). Scratchpad-файли з ключовими знахідками, на які агент спирається далі, допомагають це компенсувати. Повний рестарт щоразу (B) втрачає прогрес; temperature (C) не стосується; ігнорування (D) лишає проблему.`},
+
+{id:"S2Q8",s:2,d:3,q:`Ви реалізуєте кешування у незнайомому домені й не впевнені, які грані врахували. Який прийом найкраще виявить непомічені міркування ще до реалізації?`,
+opts:[`Interview pattern: попросити Claude поставити вам запитання, що піднімуть приховані рішення (інвалідація кешу, режими збоїв)`,`Одразу попросити повну реалізацію й виправляти баги по факту`,`Дати лише прозовий опис і покластися на дефолти моделі`,`Згенерувати код двічі й обрати довшу версію`],a:0,
+ex:`Interview pattern — коли Claude ставить запитання, що виявляють непередбачені вами міркування (стратегії інвалідації кешу, failure modes) ще до реалізації. Це особливо корисно в незнайомих доменах. Решта варіантів пропускають цей етап виявлення.`},
+
+{id:"S2Q9",s:2,d:3,q:`У вас є skill для аналізу кодбази, що генерує дуже багатослівний вивід і засмічує основну розмову. Яка опція frontmatter це вирішує?`,
+opts:[`context: fork — запускає skill в ізольованому sub-agent контексті, не забруднюючи основну розмову`,`allowed-tools: лише Read — обмежує інструменти, прибираючи зайвий вивід`,`argument-hint — підказує параметри, скорочуючи вивід`,`model: haiku — менша модель дає коротший вивід`],a:0,
+ex:`context: fork ізолює skill у subagent-контексті, тож його verbose-вивід не потрапляє в основну сесію. allowed-tools (B) обмежує інструменти, а не ізолює контекст; argument-hint (C) — про параметри; зміна моделі (D) не про ізоляцію.`},
+
+{id:"S2Q10",s:2,d:5,q:`Під час тривалої багатофазної сесії контекст заповнюється багатослівним discovery-виводом, і ви бачите, що місця лишається все менше. Яка вбудована команда допоможе зменшити споживання контексту по ходу?`,
+opts:[`/compact — стискає контекст під час сесії`,`/reset — повністю очищає й обнуляє все`,`/verbose — перемикає рівень деталізації виводу`,`/tokens — лише показує лічильник токенів`],a:0,
+ex:`/compact зменшує споживання контексту у розширених сесіях, коли він заповнюється багатослівним discovery. /reset (якби існував) втратив би прогрес; /verbose і /tokens не стискають контекст.`},
+
+{id:"S2Q11",s:2,d:3,q:`Поведінка Claude Code різниться між сесіями, і ви підозрюєте, що десь не підвантажується потрібний memory-файл. Яка команда допоможе діагностувати, які memory-файли завантажені?`,
+opts:[`/memory — показує, які memory-файли наразі завантажені`,`/debug — вмикає повний трейс виконання`,`/files — перелічує всі файли проєкту`,`/config — відкриває редактор глобального конфігу`],a:0,
+ex:`Команда /memory дозволяє перевірити, які memory-файли підвантажені, і діагностувати непослідовну поведінку між сесіями. Інші перелічені команди не дають саме цієї інформації.`},
+
+{id:"S2Q12",s:2,d:3,q:`Ви знайшли кілька дефектів у щойно згенерованому модулі. Частина з них взаємопов'язана (виправлення одного впливає на інші), частина — незалежна. Як подавати фідбек для ітерації?`,
+opts:[`Взаємопов'язані проблеми давати одним детальним повідомленням разом; незалежні — виправляти послідовно окремими ітераціями`,`Завжди давати всі проблеми одним повідомленням незалежно від зв'язків`,`Завжди виправляти строго по одній проблемі за раз`,`Давати лише найкритичнішу, решту ігнорувати`],a:0,
+ex:`Взаємодіючі проблеми краще адресувати в одному детальному повідомленні (бо їх виправлення взаємозалежні), а незалежні — послідовно. Жорсткі «завжди разом» (B) чи «завжди по одній» (C) ігнорують характер залежностей; D лишає дефекти.`},
+
+{id:"S2Q13",s:2,d:3,q:`Ви хочете персональний варіант командного skill з іншою поведінкою, але так, щоб НЕ зачепити колег. Як це зробити?`,
+opts:[`Створити персональний варіант у ~/.claude/skills/ під іншою назвою`,`Відредагувати спільний skill у .claude/skills/ репозиторію`,`Закомітити свою версію поверх командної в .claude/skills/`,`Видалити командний skill і замінити своїм`],a:0,
+ex:`Персональні кастомізації роблять у ~/.claude/skills/ під іншою назвою, щоб не впливати на команду. Редагування/коміт у спільний .claude/skills/ (B, C) зачепить усіх; видалення (D) тим паче.`},
+
+{id:"S2Q14",s:2,d:3,q:`У багатофазній задачі фаза discovery дає стільки виводу, що з'їдає контекст-вікно ще до реалізації. Який механізм Claude Code це ізолює?`,
+opts:[`Explore subagent — ізолює багатослівний discovery й повертає в основну сесію лише стислий підсумок`,`Збільшення max_tokens основної сесії`,`Запуск усього в plan mode без subagent'ів`,`Вимкнення інструментів Read/Grep на час discovery`],a:0,
+ex:`Explore subagent ізолює verbose discovery-вивід і повертає підсумки, зберігаючи контекст основної розмови. Збільшення max_tokens (B) не стосується контексту-вікна; plan mode сам по собі (C) не ізолює discovery; вимкнення інструментів (D) зробить дослідження неможливим.`},
+
+{id:"S2Q15",s:2,d:3,q:`Ви ітеративно доводите складну функцію до коректності. Який підхід найнадійніше скеровує прогресивне покращення?`,
+opts:[`Спершу написати тест-сьют (очікувана поведінка, edge cases, перформанс), потім ітерувати, ділячись падіннями тестів`,`Просити Claude самому оцінювати, чи код готовий, і зупинятись на його сигнал`,`Збільшувати довжину промпта з кожною ітерацією`,`Генерувати по 5 варіантів і обирати найкоротший`],a:0,
+ex:`Test-driven ітерація: спочатку тести, що покривають поведінку, edge cases і перформанс, далі — ітерації через шерінг падінь тестів. Це дає об'єктивний сигнал прогресу, на відміну від самооцінки моделі (B) чи довільних евристик (C, D).`},
+
+{id:"S2Q16",s:2,d:3,q:`Ви плануєте міграцію бібліотеки, що зачіпає 45+ файлів. Як найкраще поєднати режими роботи?`,
+opts:[`Plan mode для дослідження й вибору підходу до міграції, потім direct execution для виконання спланованого`,`Лише direct execution від початку до кінця заради швидкості`,`Лише plan mode — і для планування, і для самого внесення змін`,`Окрема нова сесія на кожен із 45 файлів без спільного плану`],a:0,
+ex:`Оптимально — поєднати plan mode для розслідування й проєктування з direct execution для реалізації спланованого підходу. Лише direct (B) ризикує переробками; лише plan (C) не виконує змін; роздроблені сесії без плану (D) втрачають цілісність.`},
+
+/* ===================== SCENARIO 3 ===================== */
+{id:"S3Q1",s:3,d:1,q:`Запустивши систему на темі «вплив AI на креативні індустрії», ви бачите: усі subagent'и відпрацювали успішно, але фінальні звіти охоплюють лише візуальне мистецтво й повністю пропускають музику, письменство та кіно. У логах coordinator'а: він розбив тему на «AI in digital art», «AI in graphic design», «AI in photography». Найімовірніша корінна причина?`,
+opts:[`Декомпозиція задачі coordinator'ом надто вузька — призначення subagent'ам не покривають усіх релевантних доменів теми`,`Synthesis-агенту бракує інструкцій виявляти прогалини покриття в отриманих знахідках`,`Запити web-search агента недостатньо широкі й їх треба розширити`,`Document-аналіз агент відфільтровує не-візуальні джерела через надто жорсткі критерії релевантності`],a:0,
+ex:`Логи прямо показують причину: coordinator розклав «креативні індустрії» лише на візуальні підтеми, пропустивши музику/письменство/кіно. Subagent'и коректно зробили те, що їм призначили. B, C, D помилково звинувачують нижчі агенти, які працюють у межах призначеного scope.`},
+
+{id:"S3Q2",s:3,d:5,q:`Web-search subagent впадає в timeout на складній темі. Ви проєктуєте, як ця інформація про збій тече назад до coordinator'а. Який підхід до error propagation найкраще вмикає інтелектуальне відновлення?`,
+opts:[`Повернути coordinator'у структурований error-контекст: тип збою, який запит пробували, будь-які partial results і можливі альтернативні підходи`,`Реалізувати retry з exponential backoff усередині subagent'а й повернути лише «search unavailable» після вичерпання спроб`,`Перехопити timeout і повернути порожній результат, позначений як успішний`,`Прокинути timeout-виняток у top-level handler, що завершує весь research-воркфлоу`],a:0,
+ex:`Структурований error-контекст дає coordinator'у дані для розумного рішення (ретрай з модифікацією, альтернатива, чи продовжити з partial results). Загальний статус (B) ховає контекст; «успіх» при збої (C) приховує помилку; завершення всього воркфлоу (D) надмірне.`},
+
+{id:"S3Q3",s:3,d:2,q:`Synthesis-агент часто має перевіряти конкретні факти, повертаючи керування coordinator'у → web-search → знову synthesis (+2–3 round trips, +40% latency). 85% перевірок — прості факт-чеки (дати, імена, статистика), 15% — глибше дослідження. Як зменшити overhead, зберігши надійність?`,
+opts:[`Дати synthesis-агенту scoped-інструмент verify_fact для простих lookup'ів, а складні верифікації лишити делегованими через coordinator`,`Накопичувати всі потреби верифікації й батчем повертати coordinator'у в кінці проходу`,`Дати synthesis-агенту повний доступ до всіх web-search інструментів`,`Web-search агент має проактивно кешувати додатковий контекст навколо кожного джерела «про запас»`],a:0,
+ex:`Принцип найменших привілеїв: scoped verify_fact покриває 85% простих кейсів, а складні лишаються в наявному патерні координації. Батч (B) створює блокуючі залежності; повний доступ (C) порушує separation of concerns; спекулятивний кеш (D) не передбачить потреби надійно.`},
+
+{id:"S3Q4",s:3,d:1,q:`Synthesis-subagent видає звіти так, ніби не бачив знахідок web-search і document-агентів. Coordinator їх викликав, але synthesis «не знає» їхніх результатів. Найімовірніша причина?`,
+opts:[`Subagent'и не успадковують контекст автоматично — знахідки попередніх агентів треба явно передавати у промпт synthesis-агента`,`Synthesis-агенту бракує доступу до інструмента Task`,`Координатор використовує застарілу версію SDK`,`Потрібно підвищити max_tokens synthesis-агента`],a:0,
+ex:`Subagent'и працюють з ізольованим контекстом і не успадковують історію coordinator'а; контекст треба явно вкладати у промпт (напр. передати synthesis-агенту результати пошуку й аналізу). Інші варіанти не стосуються причини.`},
+
+{id:"S3Q5",s:3,d:1,q:`Coordinator має запустити трьох незалежних subagent'ів одночасно, щоб скоротити час. Як це зробити правильно?`,
+opts:[`Емітувати кілька викликів Task в одній відповіді coordinator'а, щоб subagent'и стартували паралельно`,`Викликати Task по одному в окремих ходах і чекати завершення кожного перед наступним`,`Створити один subagent, що всередині послідовно зробить три задачі`,`Підняти temperature, щоб coordinator «захотів» паралелити`],a:0,
+ex:`Паралельний запуск роблять, емітуючи кілька викликів Task в одній відповіді coordinator'а, а не в окремих ходах. Послідовні виклики (B) чи один subagent на все (C) не дають паралелізму; temperature (D) тут ні до чого.`},
+
+{id:"S3Q6",s:3,d:1,q:`Coordinator-агент не може запустити жодного subagent'а — виклики просто не відбуваються. Що найімовірніше треба перевірити в його конфігурації?`,
+opts:[`Чи містить allowedTools інструмент «Task» — він обов'язковий, щоб coordinator міг спавнити subagent'ів`,`Чи увімкнено streaming у відповідях coordinator'а`,`Чи однакова модель у coordinator'а й subagent'ів`,`Чи достатній max_tokens для відповіді subagent'а`],a:0,
+ex:`Механізм спавну subagent'ів — інструмент Task; щоб coordinator міг їх викликати, його allowedTools має включати «Task». Streaming/модель/max_tokens (B, C, D) не блокують саму можливість спавну.`},
+
+{id:"S3Q7",s:3,d:5,q:`Після кроку синтезу у фінальному звіті губиться, з якого саме джерела взято кожне твердження. Як зберегти провенанс через синтез?`,
+opts:[`Вимагати від subagent'ів структуровані claim-source мапінги (URL/назва документа, релевантний уривок), які downstream-агенти зобов'язані зберігати й зливати при синтезі`,`Додати в кінці звіту загальний список усіх використаних джерел без прив'язки до тверджень`,`Просити synthesis-агента вгадати джерело за стилем тексту`,`Зберігати джерела лише в логах, не в контексті агентів`],a:0,
+ex:`Атрибуцію втрачають під час сумаризації, коли стискають без збереження claim-source зв'язків. Рішення — структуровані claim-source мапінги, які synthesis зберігає й зливає. Загальний список без прив'язки (B), вгадування (C) чи логи поза контекстом (D) не зберігають провенанс на рівні тверджень.`},
+
+{id:"S3Q8",s:3,d:5,q:`Два авторитетні джерела дають різну статистику по одному показнику. Як synthesis-агент має вчинити?`,
+opts:[`Зберегти обидва значення з атрибуцією джерел, явно позначивши конфлікт, а не довільно обирати одне`,`Обрати значення з джерела, що згадане першим`,`Усереднити два значення в одне число`,`Відкинути обидва значення як ненадійні`],a:0,
+ex:`Конфліктні дані з авторитетних джерел анотують із зазначенням джерел, а не обирають довільно. Вибір першого (B), усереднення (C) чи відкидання (D) спотворюють картину й приховують реальний конфлікт.`},
+
+{id:"S3Q9",s:3,d:1,q:`Coordinator завжди проганяє повний пайплайн (усі subagent'и) навіть для простих запитів, що марнує час і токени. Як це покращити?`,
+opts:[`Проєктувати coordinator так, щоб він аналізував вимоги запиту й динамічно обирав, яких subagent'ів викликати, а не завжди йшов повним маршрутом`,`Прибрати coordinator і дати агентам спілкуватися напряму між собою`,`Зробити всіх subagent'ів обов'язковими, але прискорити їх`,`Кешувати відповіді й повертати їх на будь-який запит`],a:0,
+ex:`Coordinator має аналізувати складність запиту й динамічно обирати потрібних subagent'ів, а не завжди гнати повний пайплайн. Прибирання coordinator'а (B) ламає hub-and-spoke; обов'язковість усіх (C) лишає марнування; сліпий кеш (D) дає некоректні відповіді.`},
+
+{id:"S3Q10",s:3,d:5,q:`Synthesis позначає як «суперечність» дані, що насправді просто зібрані в різні роки. Як запобігти цьому хибному трактуванню?`,
+opts:[`Вимагати від subagent'ів включати дату публікації/збору даних у структуровані виводи, щоб коректно інтерпретувати темпоральні відмінності`,`Завжди обирати найновіше число й ігнорувати старіші`,`Заборонити агентам використовувати будь-які числові дані`,`Підвищити поріг, за яким значення вважаються суперечливими`],a:0,
+ex:`Темпоральні дані потребують дат публікації/збору в структурованих виводах, щоб різниця в часі не трактувалась як суперечність. Сліпий вибір найновішого (B), відмова від чисел (C) чи зміна порогу (D) не розв'язують суть.`},
+
+{id:"S3Q11",s:3,d:1,q:`Coordinator отримав синтез, у якому є очевидні прогалини покриття теми. Який патерн найкраще це лікує?`,
+opts:[`Iterative refinement loop: coordinator оцінює синтез на прогалини, переделеговує search/analysis з націленими запитами й повторно викликає synthesis, доки покриття не стане достатнім`,`Прийняти синтез як є й позначити прогалини в кінці звіту дрібним шрифтом`,`Перезапустити всю систему з нуля на ту саму тему`,`Збільшити кількість subagent'ів удвічі для всіх майбутніх запитів`],a:0,
+ex:`Iterative refinement: coordinator виявляє прогалини, переделеговує цільові запити й повторно синтезує, поки покриття не достатнє. Прийняти як є (B) лишає прогалини; повний рестарт (C) і подвоєння агентів (D) — неефективні й не цільові.`},
+
+{id:"S3Q12",s:3,d:5,q:`Один subagent при збої повертає порожній результат, позначений як «успішний», щоб не «ламати» пайплайн. Чому це anti-pattern і що робити натомість?`,
+opts:[`Це приховує помилку (мовчазне придушення); треба розрізняти access failure (збій доступу, потребує рішення про ретрай) і валідний empty result (успішний запит без збігів)`,`Усе гаразд — порожній успіх спрощує обробку в coordinator'а`,`Треба навпаки: завершувати весь воркфлоу при будь-якому збої subagent'а`,`Достатньо логувати збій, лишивши агенту статус «успіх»`],a:0,
+ex:`Мовчазне придушення помилок (empty як success) і завершення всього воркфлоу на один збій — обидва anti-patterns. Коректно — розрізняти access failure від валідного empty result, щоб coordinator приймав правильні рішення. Логи поза контекстом (D) агенту не допомагають.`},
+
+{id:"S3Q13",s:3,d:5,q:`Synthesis-агент має обмежений бюджет контексту, а upstream-агенти повертають багатослівні reasoning-ланцюги й сирий контент. Як це оптимізувати?`,
+opts:[`Модифікувати upstream-агентів, щоб вони повертали структуровані дані (ключові факти, цитати, relevance scores) замість verbose-контенту й reasoning-ланцюгів`,`Збільшити max_tokens synthesis-агента до максимуму`,`Прибрати synthesis-крок і зливати тексти конкатенацією`,`Перенести весь reasoning у system prompt synthesis-агента`],a:0,
+ex:`Коли downstream має обмежений бюджет, upstream-агенти мають повертати структуровані дані (факти, цитати, relevance) замість багатослівного контенту й reasoning. Збільшення max_tokens (B) не масштабується; конкатенація (C) втрачає синтез; перенос reasoning (D) лише роздуває контекст.`},
+
+{id:"S3Q14",s:3,d:1,q:`Команда хоче кращої спостережуваності й узгодженої обробки помилок у багатоагентній системі. Як організувати комунікацію subagent'ів?`,
+opts:[`Маршрутизувати всю комунікацію subagent'ів через coordinator (hub-and-spoke) для спостережуваності, єдиної обробки помилок і контрольованого потоку інформації`,`Дозволити subagent'ам напряму викликати одне одного для швидкості`,`Зробити спільну глобальну пам'ять, до якої пишуть усі агенти одночасно`,`Прибрати coordinator, лишивши лінійний ланцюг агентів`],a:0,
+ex:`Hub-and-spoke: coordinator керує всією міжагентною комунікацією, обробкою помилок і маршрутизацією — це дає спостережуваність і контроль. Прямі виклики (B), спільна глобальна пам'ять (C) чи лінійний ланцюг без координатора (D) погіршують контроль і трасування.`},
+
+{id:"S3Q15",s:3,d:2,q:`Synthesis-агент час від часу намагається сам робити веб-пошуки й використовує інструменти поза своєю спеціалізацією, псуючи результат. Який принцип розподілу інструментів допоможе?`,
+opts:[`Обмежити набір інструментів кожного subagent'а тими, що релевантні його ролі, запобігаючи cross-specialization misuse`,`Дати всім subagent'ам однаковий повний набір інструментів для гнучкості`,`Прибрати в synthesis-агента всі інструменти взагалі`,`Форсувати tool_choice synthesis-агента на web-search`],a:0,
+ex:`Агенти з інструментами поза спеціалізацією схильні їх неправильно вживати. Рішення — scoped tool access: лише потрібні ролі інструменти. Повний набір усім (B) погіршує; повне позбавлення (C) зламає synthesis; форсування web-search (D) узагалі помилкове.`},
+
+{id:"S3Q16",s:3,d:1,q:`Як краще написати промпт coordinator'а для subagent'ів, щоб ті лишались адаптивними?`,
+opts:[`Задавати дослідницькі цілі та критерії якості, а не покрокові процедурні інструкції`,`Прописувати точний step-by-step сценарій кожного subagent'а`,`Давати лише назву теми без жодних критеріїв`,`Жорстко фіксувати кількість джерел і слів для кожного агента`],a:0,
+ex:`Промпти coordinator'а мають специфікувати дослідницькі цілі й критерії якості, а не покрокові процедури — це лишає subagent'ам простір для адаптації. Жорсткий step-by-step (B) і жорсткі ліміти (D) сковують; гола тема без критеріїв (C) дає неконтрольований результат.`},
+
+/* ===================== SCENARIO 4 ===================== */
+{id:"S4Q1",s:4,d:2,q:`Інженер просить знайти всі місця виклику конкретної функції по кодбазі. Який built-in інструмент обрати?`,
+opts:[`Grep — пошук за вмістом файлів (імена функцій, повідомлення помилок, import'и)`,`Glob — пошук файлів за патерном імені/розширення`,`Read — читати кожен файл цілком по черзі`,`Bash із інтерактивним редактором`],a:0,
+ex:`Grep призначений для пошуку за вмістом коду (напр. усі виклики функції). Glob (B) шукає файли за патерном імені; Read (C) читає вміст конкретного файлу, не шукає по всіх; Bash-редактор (D) недоречний.`},
+
+{id:"S4Q2",s:4,d:2,q:`Потрібно знайти всі тестові файли за патерном **/*.test.tsx по проєкту. Який інструмент пасує?`,
+opts:[`Glob — пошук шляхів файлів за патерном імені/розширення`,`Grep — пошук за вмістом усередині файлів`,`Edit — точкова зміна за унікальним текстом`,`Write — створення нових файлів`],a:0,
+ex:`Glob знаходить файли за патернами імен (напр. **/*.test.tsx). Grep (B) — для вмісту; Edit (C) і Write (D) — для модифікації/створення, не для пошуку.`},
+
+{id:"S4Q3",s:4,d:2,q:`Edit падає, бо текст-якір, який ви хочете замінити, зустрічається в файлі неунікально. Який надійний fallback?`,
+opts:[`Прочитати файл цілком через Read, тоді переписати через Write`,`Кілька разів повторити Edit, доки не спрацює`,`Видалити файл і створити заново наосліп`,`Перейти на Grep для зміни вмісту`],a:0,
+ex:`Коли Edit не може знайти унікальний якір, надійний fallback — Read (завантажити повний вміст) + Write (перезаписати). Повтори Edit (B) не усунуть неунікальність; видалення наосліп (C) ризиковане; Grep (D) не редагує.`},
+
+{id:"S4Q4",s:4,d:2,q:`Агент має зрозуміти незнайому кодбазу. Який підхід до дослідження найефективніший за контекстом?`,
+opts:[`Інкрементально: спершу Grep, щоб знайти точки входу, далі Read, щоб іти за import'ами й трасувати потоки`,`Прочитати всі файли проєкту наперед через Read, щоб мати повну картину`,`Покластися лише на назви файлів через Glob без читання вмісту`,`Виконати Bash-скрипт, що друкує весь код у консоль`],a:0,
+ex:`Розуміння будують інкрементально: Grep для точок входу, потім Read для трасування import'ів і потоків — а не читання всіх файлів наперед (B), що з'їдає контекст. Лише імена (C) недостатні; дамп усього коду (D) теж переповнює контекст.`},
+
+{id:"S4Q5",s:4,d:2,q:`Команда хоче спільний MCP-сервер з автентифікацією токеном, доступний усім у проєкті, без коміту секретів у репозиторій. Як налаштувати?`,
+opts:[`Сконфігурувати сервер у project-scoped .mcp.json з expansion змінних оточення (напр. \${GITHUB_TOKEN}) для токена`,`Захардкодити токен прямо в .mcp.json і закомітити`,`Покласти конфіг у ~/.claude.json кожного розробника окремо`,`Передавати токен у тексті кожного промпта вручну`],a:0,
+ex:`Спільні командні MCP-сервери конфігурують у project-scoped .mcp.json з expansion змінних оточення для токенів — секрети не комітяться. Хардкод (B) витікає в репозиторій; user-scope (C) не шериться як командний; ручна передача в промпті (D) небезпечна й непрактична.`},
+
+{id:"S4Q6",s:4,d:2,q:`Розробник хоче підключити особистий експериментальний MCP-сервер лише для себе, не зачіпаючи команду. Куди його прописати?`,
+opts:[`У user-scoped ~/.claude.json`,`У project-scoped .mcp.json репозиторію`,`У кореневий CLAUDE.md проєкту`,`У .claude/commands/ як slash-команду`],a:0,
+ex:`Особисті/експериментальні MCP-сервери прописують у user-scoped ~/.claude.json. Project-scoped .mcp.json (B) зробив би його командним; CLAUDE.md (C) і commands (D) — не місце для MCP-конфігурації.`},
+
+{id:"S4Q7",s:4,d:2,q:`Ви додали потужний MCP-інструмент пошуку, але агент усе одно віддає перевагу built-in Grep і майже не кличе ваш інструмент. Який найкращий перший крок?`,
+opts:[`Покращити опис MCP-інструмента, детально пояснивши його можливості й виводи, щоб агент не надавав перевагу built-in`,`Видалити інструмент Grep у агента взагалі`,`Форсувати tool_choice завжди на MCP-інструмент`,`Перейменувати Grep, щоб заплутати агента`],a:0,
+ex:`Якщо агент віддає перевагу built-in над кращим MCP-інструментом, підсилюють опис MCP-інструмента (можливості, виводи), щоб він став очевидним вибором. Видалення Grep (B) і форсування (C) — грубі обхідні шляхи; перейменування Grep (D) — anti-pattern.`},
+
+{id:"S4Q8",s:4,d:2,q:`Агент щоразу робить багато exploratory-викликів, щоб дізнатися, які дані взагалі доступні (перелік issue, ієрархія документації, схеми БД). Що зменшить ці зайві виклики?`,
+opts:[`Виставити каталоги контенту як MCP resources, щоб дати агенту видимість доступних даних без exploratory-викликів`,`Збільшити max_tokens, щоб умістити більше результатів пошуку`,`Додати ще інструментів пошуку для кожного типу даних`,`Кешувати результати exploratory-викликів на бекенді`],a:0,
+ex:`MCP resources — механізм виставити каталоги контенту (issue summaries, ієрархії документації, схеми БД), щоб агент бачив доступні дані без exploratory tool calls. Інші варіанти не дають цієї оглядовості наперед.`},
+
+{id:"S4Q9",s:4,d:2,q:`Вам потрібна стандартна інтеграція з Jira. Що краще — писати власний MCP-сервер чи взяти готовий?`,
+opts:[`Узяти існуючий community MCP-сервер для стандартної інтеграції, лишивши кастомні сервери для team-specific воркфлоу`,`Завжди писати власний сервер заради повного контролю`,`Не використовувати MCP, а парсити Jira через Bash і curl`,`Виставити Jira як CLAUDE.md-файл`],a:0,
+ex:`Для стандартних інтеграцій (напр. Jira) обирають готові community MCP-сервери, а кастомні лишають для специфічних командних воркфлоу. Завжди-власний (B) — зайва робота; Bash-парсинг (C) крихкий; CLAUDE.md (D) не для цього.`},
+
+{id:"S4Q10",s:4,d:1,q:`Задача: «додати вичерпні тести до великої legacy-кодбази». Це відкрита задача без наперед відомого плану. Яка стратегія декомпозиції підходить?`,
+opts:[`Dynamic adaptive decomposition: спершу зкартувати структуру, виявити high-impact зони, тоді скласти пріоритезований план, що адаптується в міру виявлення залежностей`,`Fixed sequential pipeline із наперед заданими кроками для всіх файлів`,`Згенерувати тести для всіх файлів одним проходом без плану`,`Просити користувача наперед перелічити всі потрібні тести`],a:0,
+ex:`Відкриті дослідницькі задачі вимагають динамічної адаптивної декомпозиції: мапа структури → high-impact зони → пріоритезований план, що адаптується. Fixed pipeline (B) пасує передбачуваним задачам; one-pass без плану (C) і повний список наперед (D) тут нереалістичні.`},
+
+{id:"S4Q11",s:4,d:1,q:`Вам треба передбачуваний багатоаспектний code review: проаналізувати кожен файл окремо, а потім зробити окремий крос-файловий інтеграційний прохід. Який патерн декомпозиції це?`,
+opts:[`Prompt chaining — фіксований послідовний пайплайн із чітких кроків`,`Dynamic decomposition на основі проміжних знахідок`,`Single-pass аналіз усього разом`,`Fork-based exploration кількох гілок`],a:0,
+ex:`Для передбачуваних багатоаспектних рев'ю пасує prompt chaining — фіксована послідовність кроків (напр. аналіз кожного файлу, тоді крос-файловий прохід). Dynamic decomposition (B) — для відкритих задач; single-pass (C) дає attention dilution; fork (D) — про дивергентні гілки.`},
+
+{id:"S4Q12",s:4,d:1,q:`Ви повертаєтесь до конкретної названої сесії розслідування, щоб продовжити її через день. Який механізм використати?`,
+opts:[`--resume <session-name>, щоб продовжити саме цю названу попередню розмову`,`fork_session, щоб створити нову гілку`,`Почати нову сесію без жодного контексту`,`/compact на поточній сесії`],a:0,
+ex:`Названу сесію продовжують через --resume <session-name>. fork_session (B) — для дивергентних гілок від спільної бази; нова сесія без контексту (C) втрачає напрацювання; /compact (D) лише стискає поточний контекст.`},
+
+{id:"S4Q13",s:4,d:1,q:`Ви хочете порівняти два підходи до рефакторингу, стартуючи з однакового базового аналізу кодбази, але в незалежних гілках. Що використати?`,
+opts:[`fork_session — створити незалежні гілки від спільного analysis baseline для дивергентних підходів`,`--resume однієї й тієї ж сесії для обох підходів по черзі`,`Дві повністю незалежні сесії з нуля без спільної бази`,`/memory, щоб роздвоїти контекст`],a:0,
+ex:`fork_session створює незалежні гілки від спільного baseline — ідеально для порівняння двох стратегій рефакторингу. --resume однієї сесії (B) змішає гілки; дві сесії з нуля (C) втрачають спільну базу; /memory (D) не про форк.`},
+
+{id:"S4Q14",s:4,d:1,q:`Ви відновлюєте сесію після того, як кілька раніше проаналізованих файлів були змінені поза Claude. Як діяти найнадійніше?`,
+opts:[`Поінформувати відновлену сесію про конкретні зміни файлів для націленого ре-аналізу; якщо ж попередні tool-результати застаріли загалом — почати свіжу сесію з ін'єкцією структурованого summary`,`Просто продовжити --resume і покластися на старі tool-результати як є`,`Завжди починати з нуля, ігноруючи весь попередній контекст`,`Підвищити max_tokens, щоб умістити і старий, і новий стан`],a:0,
+ex:`Важливо повідомити агенту про зміни файлів для цільового ре-аналізу; коли попередні tool-результати застаріли, надійніше почати свіжу сесію зі структурованим summary, ніж resume зі stale-даними. Сліпий resume (B) ризикує діяти на застарілому; завжди-з-нуля (C) марнує валідний контекст; max_tokens (D) не про свіжість даних.`},
+
+{id:"S4Q15",s:4,d:2,q:`У вас є один загальний інструмент analyze_document, який модель застосовує по-різному й непослідовно. Який рефакторинг покращить надійність?`,
+opts:[`Розбити його на purpose-specific інструменти з чіткими input/output контрактами (напр. extract_data_points, summarize_content, verify_claim_against_source)`,`Лишити один інструмент, але збільшити його опис удвічі`,`Об'єднати його ще з кількома інструментами в один універсальний`,`Форсувати tool_choice завжди на analyze_document`],a:0,
+ex:`Загальні інструменти розбивають на purpose-specific із визначеними контрактами — це усуває неоднозначність застосування. Просто довший опис (B) не міняє суті generic-інструмента; об'єднання (C) погіршує; форсування (D) не вирішує плутанину застосування.`},
+
+{id:"S4Q16",s:4,d:2,q:`Ви хочете гарантувати, що модель викличе якийсь інструмент, а не поверне просто текстову відповідь. Яке налаштування tool_choice використати?`,
+opts:[`tool_choice: "any" — модель зобов'язана викликати інструмент (хоч і сама обирає який)`,`tool_choice: "auto" — модель може повернути текст замість виклику`,`tool_choice: {"type":"tool","name":"..."} обов'язково з конкретним інструментом, навіть якщо він не той`,`Прибрати всі інструменти, щоб лишився лише текст`],a:0,
+ex:`tool_choice: "any" гарантує, що модель викличе якийсь інструмент, а не поверне conversational-текст. "auto" (B) дозволяє текст; форсування конкретного (C) недоречне, якщо потрібен будь-який; прибирання інструментів (D) — протилежне меті.`},
+
+/* ===================== SCENARIO 5 ===================== */
+{id:"S5Q1",s:5,d:3,q:`Ваш pipeline-скрипт запускає claude "Analyze this PR for security issues", але job висить нескінченно — Claude Code чекає на інтерактивний ввід. Який правильний підхід для автоматизованого пайплайну?`,
+opts:[`Додати прапорець -p: claude -p "Analyze this PR for security issues"`,`Виставити змінну оточення CLAUDE_HEADLESS=true перед запуском`,`Перенаправити stdin з /dev/null`,`Додати прапорець --batch`],a:0,
+ex:`Прапорець -p (--print) — задокументований спосіб запуску Claude Code в неінтерактивному режимі: обробляє промпт, друкує в stdout і виходить. CLAUDE_HEADLESS (B) і --batch (D) — неіснуючі; редирект stdin (C) — обхід, що не відповідає синтаксису Claude Code.`},
+
+{id:"S5Q2",s:5,d:4,q:`Команда хоче зменшити витрати на API. Зараз real-time виклики живлять два воркфлоу: (1) блокуючий pre-merge check, який має завершитись до merge, і (2) звіт по tech debt, що генерується вночі для ранкового перегляду. Менеджер пропонує перевести обидва на Message Batches API заради 50% економії. Як оцінити?`,
+opts:[`Перевести на batch лише звіти по tech debt; для pre-merge checks лишити real-time`,`Перевести обидва на batch зі status polling`,`Лишити real-time для обох, щоб уникнути проблем із порядком результатів`,`Перевести обидва на batch із timeout-fallback на real-time`],a:0,
+ex:`Batches API дає 50% економії, але час обробки — до 24 годин без гарантії latency. Це не годиться для блокуючого pre-merge, але ідеально для нічних звітів. B покладається на «зазвичай швидше» — неприйнятно для блокуючого; C — хибне уявлення (результати корелюються через custom_id); D — зайва складність.`},
+
+{id:"S5Q3",s:5,d:4,q:`PR змінює 14 файлів у модулі обліку. Single-pass рев'ю всіх файлів разом дає непослідовний результат: десь детальний фідбек, десь поверхневий, очевидні баги пропущені, а інколи фідбек суперечливий — патерн позначено проблемним в одному файлі й схвалено ідентичний код в іншому. Як перебудувати рев'ю?`,
+opts:[`Розбити на сфокусовані проходи: аналіз кожного файлу окремо на локальні проблеми, потім окремий integration-прохід по крос-файлових потоках даних`,`Вимагати від розробників ділити великі PR на 3–4 файли перед авто-рев'ю`,`Перейти на модель із більшим контекстним вікном, щоб умістити всі 14 файлів за раз`,`Зробити три незалежні проходи й флагати лише ті проблеми, що з'явились мінімум у двох`],a:0,
+ex:`Корінь — attention dilution при обробці багатьох файлів разом. Розбиття на per-file проходи + окремий integration-прохід дає рівну глибину й ловить крос-файлові проблеми. B перекладає тягар на людей; C — хибне уявлення (більший контекст ≠ краща увага); D придушує реальні баги, які ловляться лише інколи.`},
+
+{id:"S5Q4",s:5,d:3,q:`Ви хочете, щоб у CI Claude Code видавав машиночитні findings для автоматичного постингу як inline-коментарі до PR. Які CLI-прапорці це забезпечують?`,
+opts:[`--output-format json разом із --json-schema для структурованого виводу`,`--verbose для повного тексту з подальшим парсингом регулярками`,`--interactive, щоб уточнити формат у діалозі`,`--markdown для красивого форматування коментарів`],a:0,
+ex:`--output-format json із --json-schema продукують машиночитні структуровані findings для автоматичного постингу як inline PR-коментарі. Verbose+regex (B) крихке; --interactive (C) повісить CI; --markdown (D) не дає надійної структури для парсингу.`},
+
+{id:"S5Q5",s:5,d:4,q:`Ваш промпт каже «перевір, що коментарі точні», і це дає багато false positives. Як переформулювати критерій, щоб підвищити точність?`,
+opts:[`Дати явний критерій: «флагати коментар, лише коли заявлена в ньому поведінка суперечить фактичній поведінці коду»`,`Додати «будь консервативним і повідомляй лише high-confidence знахідки»`,`Просити модель самій оцінювати впевненість і фільтрувати за нею`,`Збільшити max_tokens, щоб модель ретельніше перевіряла`],a:0,
+ex:`Явні категоріальні критерії («флагати, лише коли заявлене суперечить реальній поведінці») працюють краще за розмиті інструкції. Загальні «будь консервативним / лише high-confidence» (B, C) не підвищують точність так, як конкретні критерії; max_tokens (D) не про це.`},
+
+{id:"S5Q6",s:5,d:4,q:`Менеджер пропонує знизити false positives, додавши в промпт «звітуй лише про high-confidence проблеми» та «будь обережним». Чому це слабке рішення?`,
+opts:[`Загальні інструкції на кшталт «будь консервативним» чи «лише high-confidence» не підвищують precision; потрібні конкретні категоріальні критерії, що визначають, які проблеми звітувати, а які пропускати`,`Це сильне рішення — саме так і треба робити`,`Проблема лише в слові «обережним»; досить замінити його на «суворим»`,`Достатньо знизити temperature до нуля`],a:0,
+ex:`Розмиті заклики до обережності/впевненості не покращують precision. Дієве — специфічні категоріальні критерії: що саме звітувати (баги, security) і що пропускати (дрібний стиль). Заміна слів (C) чи temperature (D) суті не міняють.`},
+
+{id:"S5Q7",s:5,d:4,q:`Та сама Claude-сесія, що згенерувала код, гірше знаходить у ньому власні тонкі помилки, навіть з інструкцією «перевір себе» чи extended thinking. Який підхід ефективніший?`,
+opts:[`Використати другий незалежний інстанс Claude (без reasoning-контексту генерації) для рев'ю коду`,`Додати в той самий промпт інструкцію «уважно перевір власний код двічі»`,`Увімкнути extended thinking у тій самій сесії`,`Підняти temperature на етапі самоперевірки`],a:0,
+ex:`Модель зберігає reasoning-контекст генерації й менш схильна сумніватись у власних рішеннях у тій самій сесії. Незалежний review-інстанс без цього контексту ефективніше ловить тонкі проблеми, ніж self-review інструкції (B), extended thinking (C) чи temperature (D).`},
+
+{id:"S5Q8",s:5,d:3,q:`Після нових комітів ви повторно ганяєте рев'ю, і Claude постить дублікати коментарів на ті самі проблеми, що вже були. Як це усунути?`,
+opts:[`Включати попередні findings у контекст і інструктувати Claude звітувати лише нові або досі невиправлені проблеми`,`Видаляти всі попередні коментарі перед кожним повторним рев'ю`,`Запускати рев'ю лише раз на весь PR і більше ніколи`,`Знизити max_tokens, щоб коментарів фізично було менше`],a:0,
+ex:`При повторних рев'ю після нових комітів передають попередні findings у контекст і просять звітувати лише нові/невиправлені — це уникає дублів. Видалення коментарів (B) втрачає історію; одноразове рев'ю (C) ламає процес; менший max_tokens (D) ріже зміст наосліп.`},
+
+{id:"S5Q9",s:5,d:4,q:`Детальні інструкції все одно дають непослідовний формат фідбеку рев'ю. Який прийом найкраще дає консистентний, actionable формат?`,
+opts:[`Few-shot приклади, що демонструють бажаний формат виводу (location, issue, severity, suggested fix)`,`Ще детальніша прозова специфікація формату`,`Просити модель саму вигадати формат щоразу`,`Збільшити кількість проходів рев'ю`],a:0,
+ex:`Few-shot приклади — найдієвіший спосіб домогтися консистентного, actionable формату (location/issue/severity/fix), коли самих інструкцій недостатньо. Більше прози (B) чи свобода формату (C) не дають стабільності; більше проходів (D) не про формат.`},
+
+{id:"S5Q10",s:5,d:3,q:`Авто-генерація тестів у CI пропонує тести, що дублюють уже наявні сценарії. Як це зменшити?`,
+opts:[`Передавати наявні тестові файли в контекст, щоб генерація уникала дублювання вже покритих сценаріїв`,`Збільшити кількість згенерованих тестів, щоб «перекрити» дублі`,`Вимкнути авто-генерацію тестів узагалі`,`Генерувати тести випадково й видаляти схожі постфактум`],a:0,
+ex:`Щоб уникнути дублів, наявні тестові файли подають у контекст — генерація бачить, що вже покрито. Більше тестів (B) множить дублі; вимкнення (C) втрачає користь; випадкова генерація з пост-чисткою (D) неефективна.`},
+
+{id:"S5Q11",s:5,d:3,q:`Якість і цінність авто-генерованих тестів у CI низька — багато low-value тестів. Який механізм найкраще передає Claude Code потрібний контекст у CI?`,
+opts:[`Документувати у CLAUDE.md стандарти тестування, критерії цінних тестів і доступні fixtures`,`Класти всі інструкції в один довгий рядок CLI-команди щоразу`,`Покладатися на дефолтну поведінку моделі без жодного контексту`,`Зберігати стандарти лише у вікі команди поза репозиторієм`],a:0,
+ex:`CLAUDE.md — механізм передати CI-інстансу Claude Code контекст проєкту (стандарти тестування, критерії цінних тестів, fixtures), що підвищує якість і ріже low-value вивід. Довгий CLI-рядок (B) некерований; дефолти без контексту (C) і зовнішня вікі (D) до моделі не доходять.`},
+
+{id:"S5Q12",s:5,d:4,q:`Ви ганяєте документи через Batches API (обробка до 24 год) і маєте дотриматись SLA 30 годин. Як спланувати подачу батчів?`,
+opts:[`Подавати батчі у вікнах ~4 години, щоб гарантувати 30-годинний SLA з урахуванням до 24 год обробки`,`Подати все одним батчем раз на добу й сподіватись, що встигне`,`Перейти на синхронний API, бо batch не підходить для жодних SLA`,`Подавати по одному документу окремими батчами щохвилини`],a:0,
+ex:`Частоту подачі рахують від SLA-обмежень: при обробці до 24 год і цілі 30 год вікна подачі ~4 год гарантують дотримання. Один батч на добу (B) ризикує не вкластися; повна відмова від batch (C) втрачає економію; по одному документу (D) неефективно.`},
+
+{id:"S5Q13",s:5,d:4,q:`Одна категорія перевірок дає стільки false positives, що розробники втрачають довіру навіть до точних категорій. Який прагматичний крок?`,
+opts:[`Тимчасово вимкнути високо-FP категорію, щоб відновити довіру, паралельно покращуючи промпт для неї`,`Лишити все як є — довіра відновиться сама`,`Знизити загальну кількість усіх знахідок наполовину`,`Видалити всі категорії, крім стилю`],a:0,
+ex:`Високий рівень FP у категорії підриває довіру й до точних категорій. Прагматично — тимчасово вимкнути проблемну категорію, відновити довіру й паралельно доопрацьовувати промпт. Бездіяльність (B), сліпе скорочення (C) чи лишання лише стилю (D) не розв'язують проблему адресно.`},
+
+{id:"S5Q14",s:5,d:4,q:`Воркфлоу потребує, щоб у межах одного запиту модель викликала інструмент, отримала результат і продовжила міркувати (multi-turn tool calling). Чи годиться для цього Batches API?`,
+opts:[`Ні — Batches API не підтримує multi-turn tool calling у межах одного запиту; для такого воркфлоу потрібен синхронний API`,`Так — batch підтримує повний multi-turn tool calling, треба лише polling`,`Так, якщо додати custom_id до кожного ходу`,`Так, але лише з прапорцем --interactive`],a:0,
+ex:`Batch API не підтримує multi-turn tool calling у межах одного запиту (не можна виконати інструмент посеред запиту й повернути результат). Для такого потрібен синхронний API. custom_id (C) лише корелює пари запит/відповідь, а не вмикає multi-turn.`},
+
+{id:"S5Q15",s:5,d:3,q:`Чому в CI-рев'ю варто використовувати окремий інстанс Claude, а не ту саму сесію, що згенерувала код?`,
+opts:[`Та сама сесія зберігає reasoning-контекст генерації й гірше критикує власні зміни; незалежний інстанс рев'ю об'єктивніший`,`Бо одна сесія не може фізично запустити інструмент Read двічі`,`Бо інстанси завжди використовують різні моделі`,`Бо це єдиний спосіб увімкнути --output-format json`],a:0,
+ex:`Session context isolation: сесія, що згенерувала код, менш ефективна в рев'ю власних змін через збережений reasoning-контекст; незалежний інстанс рев'ю об'єктивніший. Інші пояснення (B, C, D) — технічно хибні.`},
+
+{id:"S5Q16",s:5,d:4,q:`Колега боїться, що few-shot приклади змусять модель ловити лише ті патерни, що в прикладах, і пропускати нові. Що насправді?`,
+opts:[`Few-shot приклади дозволяють моделі узагальнювати судження на нові патерни, а не лише матчити наперед задані кейси`,`Так і є — few-shot завжди обмежує модель лише прикладами`,`Few-shot працює тільки для форматування, але не для суджень`,`Few-shot варто давати лише по одному прикладу, інакше шкідливо`],a:0,
+ex:`Few-shot приклади допомагають моделі генералізувати на нові патерни (а також демонструють обробку ambiguous-кейсів і формат), а не лише матчити задані. Тож побоювання необґрунтоване; твердження B, C, D невірні.`},
+
+/* ===================== SCENARIO 6 ===================== */
+{id:"S6Q1",s:6,d:4,q:`Ваша система екстракції інколи повертає синтаксично невалідний JSON, що ламає downstream. Який підхід найнадійніше гарантує schema-compliant вивід без JSON-синтаксичних помилок?`,
+opts:[`Tool use (tool_use) з JSON-схемою як вхідними параметрами інструмента, з якого витягують структуровані дані`,`Просити модель «повертати валідний JSON» у system prompt і парсити відповідь`,`Регулярками лагодити невалідний JSON постфактум`,`Знизити temperature до нуля, щоб JSON завжди був валідним`],a:0,
+ex:`tool_use із JSON-схемою — найнадійніший спосіб гарантованого schema-compliant виводу, що усуває синтаксичні помилки JSON. Прохання в промпті (B) ймовірнісне; полагодження регулярками (C) крихке; temperature (D) не гарантує валідності схеми.`},
+
+{id:"S6Q2",s:6,d:4,q:`Деякі вихідні документи не містять певних полів, а модель вигадує значення, щоб задовольнити required-поля схеми. Як це усунути?`,
+opts:[`Зробити такі поля optional/nullable, щоб модель повертала null замість фабрикації, коли інформації немає`,`Лишити поля required, але просити модель «не вигадувати»`,`Видалити ці поля зі схеми взагалі`,`Підвищити max_tokens, щоб модель знайшла відсутні значення`],a:0,
+ex:`Поля, яких може не бути в джерелі, проєктують optional/nullable — це не змушує модель фабрикувати значення під required. Прохання «не вигадувати» (B) ймовірнісне; видалення полів (C) втрачає дані там, де вони є; max_tokens (D) не створить відсутню інформацію.`},
+
+{id:"S6Q3",s:6,d:4,q:`Валідація екстракції зафейлила (Pydantic/JSON-схема). Як побудувати retry, щоб модель виправилась?`,
+opts:[`Надіслати follow-up запит, що включає оригінальний документ, провалену екстракцію й конкретні помилки валідації для самокорекції`,`Просто повторити той самий запит ще раз без змін`,`Підвищити temperature й сподіватись на іншу відповідь`,`Відкинути документ як необроблюваний`],a:0,
+ex:`Retry-with-error-feedback: у follow-up додають документ, провалену екстракцію й конкретні помилки валідації — це скеровує модель до виправлення. Сліпий повтор (B) і temperature (C) не дають напрямку; відкидання (D) передчасне для виправних помилок.`},
+
+{id:"S6Q4",s:6,d:4,q:`Валідація вимагає поле, якого в наданому документі просто немає (потрібна інформація існує лише в зовнішньому документі, що не передавався). Чи допоможе retry?`,
+opts:[`Ні — retry неефективний, коли потрібної інформації немає в джерелі; це не format/structural помилка, яку можна виправити повтором`,`Так — достатньо повторити кілька разів, і модель знайде значення`,`Так, якщо додати «дуже постарайся» в промпт`,`Так, якщо підвищити max_tokens`],a:0,
+ex:`Retry дієвий для format/structural помилок, але безсилий, коли інформації просто немає в наданому джерелі. Повтори (B), заклики (C) чи max_tokens (D) не створять відсутні дані — потрібен інший документ або позначення поля як відсутнього.`},
+
+{id:"S6Q5",s:6,d:4,q:`Тип вхідного документа наперед невідомий, і у вас є кілька схем екстракції під різні типи. Як гарантувати, що модель таки викличе якусь extraction-схему, а не поверне текст?`,
+opts:[`Виставити tool_choice: "any", щоб модель була зобов'язана викликати один з extraction-інструментів`,`tool_choice: "auto", щоб модель сама вирішила, чи потрібен інструмент`,`Форсувати один конкретний інструмент через {"type":"tool","name":"..."}`,`Прибрати схеми й покластися на вільний текст`],a:0,
+ex:`Коли тип документа невідомий, а схем кілька, tool_choice: "any" гарантує виклик якогось extraction-інструмента (модель сама обере відповідний). "auto" (B) дозволяє текст; форсування конкретного (C) недоречне за невідомого типу; вільний текст (D) — протилежне меті.`},
+
+{id:"S6Q6",s:6,d:4,q:`Вам треба, щоб у пайплайні спершу гарантовано відпрацював саме extract_metadata, а вже потім — кроки збагачення. Як це забезпечити?`,
+opts:[`Форсувати конкретний інструмент через tool_choice: {"type":"tool","name":"extract_metadata"}, а наступні кроки обробляти в подальших ходах`,`tool_choice: "any" і сподіватись, що метадані оброблять першими`,`tool_choice: "auto" з інструкцією в промпті`,`Запустити всі інструменти одночасно й відсортувати результат`],a:0,
+ex:`Щоб гарантувати, що конкретний інструмент викликається першим, форсують tool_choice на нього (extract_metadata), а решту обробляють у follow-up ходах. "any" (B) не фіксує саме цей інструмент; "auto" (C) ймовірнісне; одночасний запуск (D) не дає гарантованого порядку.`},
+
+{id:"S6Q7",s:6,d:4,q:`Категорії в документах не фіксовані наперед — трапляються нові, плюс бувають неоднозначні випадки. Як спроєктувати поле категорії в схемі?`,
+opts:[`Enum зі значенням "other" + окреме detail-поле для розширюваності, і "unclear" для неоднозначних випадків`,`Жорсткий enum лише з відомих наперед значень без запасних`,`Вільний текстовий рядок без жодного enum`,`Required-число, що кодує категорію`],a:0,
+ex:`Для розширюваних категорій додають enum + "other" з detail-рядком, а для неоднозначних — значення "unclear". Жорсткий enum (B) не вмістить нові категорії; вільний текст (C) втрачає структуру; числовий код (D) непрозорий і крихкий.`},
+
+{id:"S6Q8",s:6,d:4,q:`Навіть з tool_use і строгою схемою екстракції з інвойсів інколи line items не сумуються до total, або значення опиняється в неправильному полі. Що це за тип помилок і як їх ловити?`,
+opts:[`Це семантичні помилки (tool_use усуває лише синтаксичні); ловити їх через self-correction: витягувати calculated_total поряд зі stated_total і флагати розбіжності`,`Це синтаксичні помилки, які tool_use уже повністю усуває`,`Достатньо знизити temperature до нуля`,`Достатньо додати ще одне required-поле total`],a:0,
+ex:`Строгі схеми через tool_use усувають синтаксичні, але не семантичні помилки (суми не сходяться, значення в чужому полі). Їх ловлять валідацією: extract calculated_total vs stated_total і флагати розбіжності. B хибне; temperature (C) і ще одне поле (D) суті не міняють.`},
+
+{id:"S6Q9",s:6,d:5,q:`Ваша система звітує 97% загальної точності екстракції. Чому покладатись лише на цю агрегатну метрику ризиковано перед автоматизацією?`,
+opts:[`Агрегатна точність може маскувати погану продуктивність на конкретних типах документів чи полях; треба аналізувати точність по типу документа й по полю окремо`,`97% — достатньо, додатковий аналіз зайвий`,`Треба лише підняти поріг до 99% загалом`,`Достатньо збільшити вибірку, не розбиваючи її на сегменти`],a:0,
+ex:`Агрегатні метрики (напр. 97%) можуть приховувати слабку якість на окремих типах документів/полях. Перед автоматизацією точність валідують по типу документа й по полю. Сама по собі вища планка (C) чи більша нерозбита вибірка (D) проблему сегментів не виявлять.`},
+
+{id:"S6Q10",s:6,d:5,q:`Ви хочете вимірювати реальний рівень помилок саме серед high-confidence екстракцій і ловити нові патерни помилок. Який метод найкращий?`,
+opts:[`Stratified random sampling high-confidence екстракцій для постійного виміру error rate і виявлення нових патернів`,`Перевіряти вручну лише ті екстракції, де модель сама позначила низьку впевненість`,`Перевіряти випадкові 1% усіх екстракцій без стратифікації`,`Покладатись на самозвітований confidence без жодних перевірок`],a:0,
+ex:`Stratified random sampling саме high-confidence екстракцій вимірює там error rate і виявляє нові патерни помилок, які інакше лишились би непоміченими. Перевірка лише low-confidence (B) пропускає приховані помилки у «впевнених»; нестратифікований семпл (C) і довіра до confidence (D) менш надійні.`},
+
+{id:"S6Q11",s:6,d:5,q:`У вас обмежена reviewer-потужність. Які екстракції варто маршрутизувати на людський перегляд у першу чергу?`,
+opts:[`Екстракції з низькою впевненістю моделі або з неоднозначних/суперечливих джерел — пріоритезуючи обмежену потужність рев'юерів`,`Випадкову частину всіх екстракцій незалежно від впевненості`,`Лише ті, де впевненість найвища, бо вони найважливіші`,`Жодні — повністю довіряти моделі`],a:0,
+ex:`На людський перегляд маршрутизують екстракції з низькою впевненістю або з неоднозначних/суперечливих джерел, концентруючи обмежену потужність рев'юерів там, де ризик найбільший. Решта варіантів або марнують ресурс, або лишають ризиковані кейси без перевірки.`},
+
+{id:"S6Q12",s:6,d:4,q:`Required-поля інколи виходять порожніми/null, бо документи мають дуже різну структуру (inline-цитати vs бібліографії, наративні описи vs структуровані таблиці). Що найкраще покращить обробку цієї варіативності?`,
+opts:[`Few-shot приклади, що демонструють коректну екстракцію з документів різної структури`,`Зробити всі поля required й заборонити null`,`Прибрати валідацію, щоб порожні поля не блокували`,`Збільшити temperature для «креативнішого» пошуку даних`],a:0,
+ex:`Few-shot приклади різних структур документів (inline-цитати vs бібліографії, наратив vs таблиці) покращують обробку варіативності й зменшують порожні поля. Жорсткі required (B) спровокують фабрикацію; зняття валідації (C) ховає проблему; temperature (D) не про структуру.`},
+
+{id:"S6Q13",s:6,d:4,q:`Ви подали батч зі 100 документів через Batches API; частина зафейлила, зокрема через перевищення контекстного ліміту. Як обробити збої?`,
+opts:[`Перездати лише провалені документи (за custom_id) з відповідними модифікаціями, напр. чанкуванням тих, що перевищили контекст`,`Перездати весь батч зі 100 документів з нуля`,`Відкинути всі провалені документи без обробки`,`Перевести весь процес на синхронний API назавжди`],a:0,
+ex:`Збої батчу обробляють адресно: перездають лише провалені (ідентифіковані за custom_id) з потрібними модифікаціями (чанкування завеликих документів). Перездача всього (B) марнотратна; відкидання (C) втрачає дані; повна відмова від batch (D) надмірна реакція.`},
+
+{id:"S6Q14",s:6,d:5,q:`Ви хочете, щоб пороги перегляду базувались на надійних confidence-оцінках. Як отримати калібровані field-level confidence?`,
+opts:[`Просити модель видавати field-level confidence, а пороги калібрувати на labeled validation set`,`Брати самозвітований confidence моделі як є, без калібрування`,`Виставити єдиний фіксований поріг 0.5 для всіх полів`,`Відмовитись від confidence і перевіряти все вручну`],a:0,
+ex:`Field-level confidence калібрують за допомогою labeled validation set, і вже за ним налаштовують пороги маршрутизації на рев'ю. Сирий самозвіт (B) погано калібрований; універсальний 0.5 (C) ігнорує відмінності полів; ручна перевірка всього (D) не масштабується.`},
+
+{id:"S6Q15",s:6,d:4,q:`Джерела мають непослідовне форматування (дати, одиниці виміру, неформальні позначення), хоча сама вихідна схема строга. Як це найкраще врахувати?`,
+opts:[`Включити правила нормалізації форматів прямо в промпт поряд зі строгою output-схемою`,`Послабити схему до вільного тексту, щоб вмістити будь-який формат`,`Ігнорувати документи з нестандартним форматуванням`,`Покластися на те, що строга схема сама нормалізує формати`],a:0,
+ex:`Непослідовне форматування джерел адресують, додаючи правила нормалізації в промпт поряд зі строгою схемою виводу. Послаблення схеми (B) втрачає гарантії; ігнорування документів (C) втрачає дані; строга схема сама форматів не нормалізує (D).`},
+
+{id:"S6Q16",s:6,d:4,q:`У джерелах інколи трапляються внутрішньо суперечливі дані (напр. дві різні суми для одного значення). Як спроєктувати схему, щоб це не губилось мовчки?`,
+opts:[`Додати boolean conflict_detected (та за потреби обидва значення), щоб явно сигналізувати про суперечність у джерелі`,`Просто брати перше зустрінуте значення й не позначати конфлікт`,`Усереднювати суперечливі значення в одне поле`,`Відкидати весь документ при будь-якій суперечності`],a:0,
+ex:`Внутрішні суперечності джерела роблять явними через прапорець conflict_detected (і збереження обох значень) — щоб downstream бачив проблему. Мовчазний вибір першого (B), усереднення (C) чи відкидання документа (D) приховують або втрачають інформацію.`},
+];
+
+/* ============================================================
+   ENGINE
+   ============================================================ */
+const PASS_SCALED = 720;
+const $ = (s,el=document)=>el.querySelector(s);
+const app = $('#app');
+let T = {}; // transient run state
+let timerId = null;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function letter(i){return ['A','B','C','D','E','F'][i];}
+
+/* Build an exam: pick 4 of 6 scenarios, 15 questions from each = 60, shuffle options */
+function buildExam(){
+  const scs = shuffle([1,2,3,4,5,6]).slice(0,4);
+  let qs=[];
+  scs.forEach(sc=>{
+    const pool = QB.filter(q=>q.s===sc);
+    qs = qs.concat(shuffle(pool).slice(0,15));
+  });
+  qs = shuffle(qs).slice(0,60);
+  return qs.map(prepQ);
+}
+/* Build practice set from a scope */
+function buildPractice(scope, count){
+  let pool = QB.slice();
+  if(scope.type==='domain') pool = QB.filter(q=>q.d===scope.val);
+  if(scope.type==='scenario') pool = QB.filter(q=>q.s===scope.val);
+  pool = shuffle(pool);
+  if(count && count<pool.length) pool = pool.slice(0,count);
+  return pool.map(prepQ);
+}
+/* Per-question: shuffle options, remember new correct index */
+function prepQ(q){
+  const idx = shuffle([0,1,2,3]);
+  const opts = idx.map(i=>q.opts[i]);
+  const correct = idx.indexOf(q.a);
+  return {...q, opts, correct, _orig:q};
+}
+
+/* ---------- RENDER: HOME ---------- */
+function renderHome(){
+  stopTimer();
+  const domRows = Object.entries(DOMAINS).map(([k,v])=>`
+    <div class="domrow">
+      <span class="tag" style="flex:0 0 auto">D${k}</span>
+      <span class="domname" style="flex:1; min-width:120px; font-size:15px">${v.name}</span>
+      <div class="bar"><i style="width:${v.w/27*100}%"></i></div>
+      <b style="font-family:var(--mono); font-size:14px; flex:0 0 42px; text-align:right">${v.w}%</b>
+    </div>`).join('');
+
+  app.innerHTML = `
+  <div class="hero">
+    <div class="brandline">Anthropic · Certification</div>
+    <h1>Claude Certified Architect<br><span class="accentword">Foundations</span> — симулятор</h1>
+    <p class="sub">Тренажер, що імітує реальний екзамен: сценарні питання за п'ятьма доменами, формат «одна правильна з чотирьох», scaled score 100–1000 із прохідним балом ${PASS_SCALED}.</p>
+
+    <div class="factrow">
+      <div class="fact"><b>60</b><span>питань на спробу</span></div>
+      <div class="fact"><b>120</b><span>хвилин у режимі екзамену</span></div>
+      <div class="fact"><b>4 / 6</b><span>сценаріїв випадково</span></div>
+      <div class="fact"><b>${QB.length}</b><span>питань у банку</span></div>
+    </div>
+
+    <div class="modegrid">
+      <div class="card mode" id="mode-exam">
+        <div class="ic">⏱</div>
+        <h3>Режим екзамену</h3>
+        <p>60 питань, таймер 120 хв, без підказок. Результат і розбір — у кінці. Найближче до реального іспиту.</p>
+        <span class="btn accent">Почати екзамен →</span>
+      </div>
+      <div class="card mode" id="mode-practice">
+        <div class="ic">✎</div>
+        <h3>Режим практики</h3>
+        <p>Відповідь і пояснення одразу після кожного питання. Можна фільтрувати за доменом чи сценарієм і обрати кількість.</p>
+        <span class="btn">Налаштувати практику →</span>
+      </div>
+    </div>
+
+    <div class="card domlist" style="padding:22px 24px; margin-top:26px">
+      <h3 style="font-size:18px; margin-bottom:8px">Розподіл за доменами (ваги екзамену)</h3>
+      ${domRows}
+    </div>
+
+    <p class="footnote">Питання й пояснення створено на основі офіційного Exam Guide (домени, task statements, сценарії). Це навчальний тренажер, а не офіційні питання Anthropic. Scaled score — наближена лінійна модель (100 + частка правильних × 900); прохідний — ${PASS_SCALED}.</p>
+  </div>`;
+
+  $('#mode-exam').onclick = startExam;
+  $('#mode-practice').onclick = renderPracticeConfig;
+}
+
+/* ---------- PRACTICE CONFIG ---------- */
+function renderPracticeConfig(){
+  T = {scope:{type:'all'}, count:20};
+  const domChips = Object.entries(DOMAINS).map(([k,v])=>`<button class="chip" data-t="domain" data-v="${k}">D${k} · ${v.name.split(' ')[0]}…</button>`).join('');
+  const scChips = Object.entries(SCEN).map(([k,v])=>`<button class="chip" data-t="scenario" data-v="${k}">S${k} · ${v.t.split(' ').slice(0,2).join(' ')}</button>`).join('');
+  app.innerHTML = `
+    <button class="btn ghost" id="back" style="margin-bottom:22px">← Назад</button>
+    <h1 style="font-size:34px; margin-bottom:6px">Налаштування практики</h1>
+    <p class="muted" style="margin-top:0">Обери, з чого тренуватись і скільки питань. Пояснення з'являтиметься одразу після відповіді.</p>
+
+    <div class="card" style="padding:24px; margin-top:20px">
+      <h3 style="font-size:16px; margin-bottom:10px">Охоплення</h3>
+      <div class="opts-inline">
+        <button class="chip on accent" data-t="all" data-v="0">Усі домени та сценарії</button>
+      </div>
+      <h3 style="font-size:15px; margin:18px 0 6px; color:var(--ink2)">…або за доменом</h3>
+      <div class="opts-inline" id="domgroup">${domChips}</div>
+      <h3 style="font-size:15px; margin:18px 0 6px; color:var(--ink2)">…або за сценарієм</h3>
+      <div class="opts-inline" id="scgroup">${scChips}</div>
+
+      <h3 style="font-size:16px; margin:24px 0 10px">Кількість питань</h3>
+      <div class="opts-inline" id="countgroup">
+        <button class="chip" data-c="10">10</button>
+        <button class="chip on" data-c="20">20</button>
+        <button class="chip" data-c="40">40</button>
+        <button class="chip" data-c="0">Усі доступні</button>
+      </div>
+      <p class="muted" id="poolinfo" style="font-size:14px"></p>
+      <div style="margin-top:18px"><button class="btn accent" id="startp">Почати практику →</button></div>
+    </div>`;
+
+  $('#back').onclick = renderHome;
+  const allChips = [...app.querySelectorAll('[data-t]')];
+  function setScope(t,v){
+    T.scope = {type:t, val:+v||null};
+    allChips.forEach(c=>{c.classList.remove('on','accent');});
+    const me = allChips.find(c=>c.dataset.t===t && c.dataset.v===String(v));
+    me.classList.add('on'); if(t==='all') me.classList.add('accent');
+    updatePool();
+  }
+  allChips.forEach(c=>c.onclick=()=>setScope(c.dataset.t,c.dataset.v));
+  const countChips=[...app.querySelectorAll('[data-c]')];
+  countChips.forEach(c=>c.onclick=()=>{countChips.forEach(x=>x.classList.remove('on'));c.classList.add('on');T.count=+c.dataset.c;updatePool();});
+  function poolSize(){let p=QB; if(T.scope.type==='domain')p=QB.filter(q=>q.d===T.scope.val); if(T.scope.type==='scenario')p=QB.filter(q=>q.s===T.scope.val); return p.length;}
+  function updatePool(){const ps=poolSize();const n=(!T.count||T.count>ps)?ps:T.count;$('#poolinfo').textContent=`У вибірці: ${ps} питань · буде показано ${n}.`;}
+  updatePool();
+  $('#startp').onclick=()=>{
+    T.questions = buildPractice(T.scope, T.count);
+    if(!T.questions.length){return;}
+    T.mode='practice'; T.i=0; T.answers={}; T.locked={};
+    renderRun();
+  };
+}
+
+/* ---------- START EXAM ---------- */
+function startExam(){
+  T = {mode:'exam', questions:buildExam(), i:0, answers:{}, marked:{}, endTime:Date.now()+120*60*1000};
+  renderRun();
+  startTimer();
+}
+
+/* ---------- TIMER ---------- */
+function startTimer(){stopTimer(); timerId=setInterval(tick,1000); tick();}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null;}}
+function tick(){
+  const el=$('#timer'); if(!el){return;}
+  let left=Math.max(0,Math.round((T.endTime-Date.now())/1000));
+  const m=String(Math.floor(left/60)).padStart(2,'0'), s=String(left%60).padStart(2,'0');
+  el.textContent=`${m}:${s}`;
+  el.className='timer'+(left<=60?' crit':left<=300?' warn':'');
+  if(left<=0){stopTimer(); finishExam();}
+}
+
+/* ---------- RENDER: RUN (one question) ---------- */
+function renderRun(){
+  const q=T.questions[T.i];
+  const total=T.questions.length;
+  const answered=Object.keys(T.answers).length;
+  const isExam=T.mode==='exam';
+  const locked = !isExam && T.locked[T.i];
+  const chosen = T.answers[T.i];
+
+  const top = isExam ? `
+    <div class="topbar"><div class="inner">
+      <span class="tag">Екзамен</span>
+      <div id="timer" class="timer">120:00</div>
+      <div class="progresswrap">
+        <div class="pbar"><i style="width:${answered/total*100}%"></i></div>
+        <div class="muted" style="font-size:13px; margin-top:5px">Відповідей: ${answered}/${total}</div>
+      </div>
+      <button class="btn accent" id="submitTop" style="padding:9px 18px; font-size:15px">Завершити</button>
+    </div></div>` : `
+    <div class="topbar"><div class="inner">
+      <button class="btn ghost" id="exitp" style="padding:8px 16px; font-size:14px">← Вихід</button>
+      <span class="tag">Практика</span>
+      <div class="progresswrap">
+        <div class="pbar"><i style="width:${(T.i+1)/total*100}%"></i></div>
+        <div class="muted" style="font-size:13px; margin-top:5px">Питання ${T.i+1} з ${total} · правильних: ${practiceScore()}/${Object.keys(T.locked).length}</div>
+      </div>
+    </div></div>`;
+
+  const sc=SCEN[q.s];
+  const answers = q.opts.map((o,i)=>{
+    let cls='ans';
+    if(locked){
+      cls+=' locked';
+      if(i===q.correct) cls+=' correct';
+      else if(i===chosen) cls+=' wrong';
+    } else if(i===chosen){ cls+=' sel'; }
+    return `<div class="${cls}" data-i="${i}"><div class="key">${letter(i)}</div><div class="txt">${o}</div></div>`;
+  }).join('');
+
+  let explain='';
+  if(locked){
+    const right = chosen===q.correct;
+    explain=`<div class="explain ${right?'':'bad'}">
+      <div class="lbl">${right?'Правильно':'Правильна відповідь: '+letter(q.correct)}</div>
+      <p>${q._orig.ex}</p></div>`;
+  }
+
+  const nav = isExam ? `
+    <div class="navrow">
+      <button class="btn ghost" id="prev" ${T.i===0?'disabled':''}>← Назад</button>
+      <button class="markbtn ${T.marked[T.i]?'on':''}" id="mark">${T.marked[T.i]?'★ Позначено':'☆ Позначити'}</button>
+      <button class="btn" id="next">${T.i===total-1?'До огляду →':'Далі →'}</button>
+    </div>
+    ${renderPalette()}` : `
+    <div class="navrow">
+      <button class="btn ghost" id="prev" ${T.i===0?'disabled':''}>← Назад</button>
+      ${locked ? `<button class="btn" id="next">${T.i===total-1?'Підсумок →':'Далі →'}</button>`
+               : `<button class="btn accent" id="check" ${chosen==null?'disabled':''}>Перевірити</button>`}
+    </div>`;
+
+  app.innerHTML = top + `
+    <div class="scenario">
+      <span class="tag">Сценарій ${q.s} · Домен ${q.d}</span>
+      <div style="font-family:var(--disp); font-weight:600; font-size:17px; margin-top:4px">${sc.t}</div>
+      <p>${sc.p}</p>
+    </div>
+    <div class="card qcard">
+      <div class="qmeta"><span class="qnum">№ ${T.i+1} / ${total}</span></div>
+      <div class="qtext">${q.q}</div>
+      <div class="answers" id="answers">${answers}</div>
+      ${explain}
+      ${nav}
+    </div>`;
+
+  // wire answers
+  if(!locked){
+    [...app.querySelectorAll('.ans')].forEach(a=>a.onclick=()=>{
+      T.answers[T.i]=+a.dataset.i;
+      if(T.mode==='exam'){ renderRun(); startTimer(); }
+      else renderRun();
+    });
+  }
+  // wire nav
+  const prev=$('#prev'); if(prev)prev.onclick=()=>{T.i--;renderRun();if(isExam)startTimer();};
+  const next=$('#next'); if(next)next.onclick=()=>{ if(T.i===total-1 && isExam){renderReview();} else if(T.i===total-1 && !isExam){finishPractice();} else {T.i++;renderRun();} };
+  const mark=$('#mark'); if(mark)mark.onclick=()=>{T.marked[T.i]=!T.marked[T.i];renderRun();startTimer();};
+  const check=$('#check'); if(check)check.onclick=()=>{ if(T.answers[T.i]==null)return; T.locked[T.i]=true; renderRun(); };
+  const st=$('#submitTop'); if(st)st.onclick=renderReview;
+  const ex=$('#exitp'); if(ex)ex.onclick=()=>{ if(confirm('Вийти з практики? Прогрес не збережеться.')) renderHome(); };
+  if(isExam) startTimer();
+}
+
+function practiceScore(){return Object.keys(T.locked).reduce((n,k)=>n+(T.answers[k]===T.questions[k].correct?1:0),0);}
+
+function renderPalette(){
+  const dots=T.questions.map((q,i)=>{
+    let cls='pdot';
+    if(T.answers[i]!=null)cls+=' answered';
+    if(i===T.i)cls+=' current';
+    if(T.marked[i])cls+=' marked';
+    return `<button class="${cls}" data-j="${i}">${i+1}</button>`;
+  }).join('');
+  return `<div class="card palette">${dots}</div>`;
+}
+function wirePalette(){[...app.querySelectorAll('.pdot')].forEach(d=>d.onclick=()=>{T.i=+d.dataset.j;renderRun();startTimer();});}
+
+/* ---------- REVIEW (exam, before submit) ---------- */
+function renderReview(){
+  stopTimer();
+  const total=T.questions.length;
+  const answered=Object.keys(T.answers).length;
+  const blank=total-answered;
+  const dots=T.questions.map((q,i)=>{
+    let cls='pdot'; if(T.answers[i]!=null)cls+=' answered'; if(T.marked[i])cls+=' marked';
+    return `<button class="${cls}" data-j="${i}">${i+1}</button>`;
+  }).join('');
+  app.innerHTML=`
+    <h1 style="font-size:32px">Огляд перед завершенням</h1>
+    <p class="muted">Можна повернутись до будь-якого питання. Без відповіді: <b>${blank}</b> (рахуються як неправильні).</p>
+    <div class="card palette" style="margin-top:18px">${dots}</div>
+    <div class="navrow" style="margin-top:24px">
+      <button class="btn ghost" id="resume">← Повернутись до питань</button>
+      <button class="btn accent" id="finish">Завершити екзамен та показати результат</button>
+    </div>`;
+  [...app.querySelectorAll('.pdot')].forEach(d=>d.onclick=()=>{T.i=+d.dataset.j;renderRun();startTimer();});
+  $('#resume').onclick=()=>{renderRun();startTimer();};
+  $('#finish').onclick=()=>{ if(confirm('Завершити екзамен?')) finishExam(); };
+}
+
+/* ---------- RESULTS ---------- */
+function finishExam(){
+  stopTimer();
+  const total=T.questions.length;
+  let correct=0; const byDom={};
+  T.questions.forEach((q,i)=>{
+    const ok=T.answers[i]===q.correct; if(ok)correct++;
+    byDom[q.d]=byDom[q.d]||{c:0,n:0}; byDom[q.d].n++; if(ok)byDom[q.d].c++;
+  });
+  const scaled=Math.round(100+ (correct/total)*900);
+  const pass=scaled>=PASS_SCALED;
+  renderResults({correct,total,scaled,pass,byDom});
+}
+function finishPractice(){
+  // ensure last is locked counted; practice summary
+  const total=T.questions.length;
+  let correct=0; const byDom={};
+  T.questions.forEach((q,i)=>{
+    const ok=T.answers[i]===q.correct; if(ok)correct++;
+    byDom[q.d]=byDom[q.d]||{c:0,n:0}; byDom[q.d].n++; if(ok)byDom[q.d].c++;
+  });
+  const scaled=Math.round(100+(correct/total)*900);
+  renderResults({correct,total,scaled,pass:scaled>=PASS_SCALED,byDom,practice:true});
+}
+
+function renderResults(r){
+  const pct=Math.round(r.correct/r.total*100);
+  const C=2*Math.PI*80;
+  const off=C*(1-r.correct/r.total);
+  const ringColor=r.pass?'var(--good)':'var(--bad)';
+  const domHtml=Object.entries(r.byDom).sort((a,b)=>a[0]-b[0]).map(([k,v])=>{
+    const p=Math.round(v.c/v.n*100);
+    return `<div class="dscore">
+      <span class="tag" style="flex:0 0 auto">D${k}</span>
+      <div class="bar"><i style="width:${p}%; background:${p>=70?'linear-gradient(90deg,var(--good),#5ca06b)':'linear-gradient(90deg,var(--accent),#e0793f)'}"></i></div>
+      <span class="n">${v.c}/${v.n} · ${p}%</span>
+    </div>
+    <div class="muted" style="font-size:12.5px; margin:-7px 0 12px 6px">${DOMAINS[k].name}</div>`;
+  }).join('');
+
+  app.innerHTML=`
+    <div class="card scorehero">
+      <div class="brandline">${r.practice?'Підсумок практики':'Результат екзамену'}</div>
+      <div class="ring">
+        <svg viewBox="0 0 180 180" width="190" height="190">
+          <circle cx="90" cy="90" r="80" fill="none" stroke="#e3d6c0" stroke-width="13"/>
+          <circle cx="90" cy="90" r="80" fill="none" stroke="${ringColor}" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90 90 90)"/>
+          <text x="90" y="84" text-anchor="middle" font-family="var(--disp)" font-size="40" font-weight="600" fill="var(--ink)">${pct}%</text>
+          <text x="90" y="108" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--ink2)">${r.correct}/${r.total}</text>
+        </svg>
+      </div>
+      <div class="scaled">${r.scaled}</div>
+      <div class="muted" style="font-family:var(--mono);font-size:13px">scaled score (100–1000)</div>
+      <div class="verdict ${r.pass?'pass':'fail'}">${r.pass?'✓ Прохідний (≥ '+PASS_SCALED+')':'✗ Нижче порогу '+PASS_SCALED}</div>
+    </div>
+
+    <div class="resgrid">
+      <div class="card minicard">
+        <h3>Точність за доменами</h3>
+        ${domHtml}
+      </div>
+      <div class="card minicard">
+        <h3>Що далі</h3>
+        <p style="font-size:15px;margin-top:0">Зверни увагу на домени з результатом нижче 70% — це найслабші зони. Нижче можна переглянути кожне питання з поясненням.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+          <button class="btn" id="reviewAll">Розбір усіх питань ↓</button>
+          <button class="btn ghost" id="again">${r.practice?'Нова практика':'Новий екзамен'}</button>
+          <button class="btn ghost" id="home">На головну</button>
+        </div>
+      </div>
+    </div>
+    <div id="reviewZone"></div>`;
+
+  $('#home').onclick=renderHome;
+  $('#again').onclick=r.practice?renderPracticeConfig:startExam;
+  $('#reviewAll').onclick=()=>{renderAnswerReview(); $('#reviewZone').scrollIntoView({behavior:'smooth'});};
+}
+
+function renderAnswerReview(){
+  const z=$('#reviewZone');
+  let filter='all';
+  function draw(){
+    const items=T.questions.map((q,i)=>({q,i,chosen:T.answers[i],ok:T.answers[i]===q.correct}))
+      .filter(x=> filter==='all' ? true : filter==='wrong' ? !x.ok : filter==='blank' ? x.chosen==null : true);
+    const cards=items.map(({q,i,chosen,ok})=>{
+      const ans=q.opts.map((o,j)=>{
+        let cls='ans locked';
+        if(j===q.correct)cls+=' correct';
+        else if(j===chosen)cls+=' wrong';
+        return `<div class="${cls}"><div class="key">${letter(j)}</div><div class="txt">${o}</div></div>`;
+      }).join('');
+      const tag = chosen==null ? '<span class="tag" style="background:#e9ddc8">Без відповіді</span>'
+                : ok ? '<span class="tag" style="background:var(--goodbg);color:var(--good)">Правильно</span>'
+                     : '<span class="tag" style="background:var(--badbg);color:var(--bad)">Помилка</span>';
+      return `<div class="card qcard" style="margin-top:16px">
+        <div class="qmeta">${tag}<span class="tag">Сценарій ${q.s} · Домен ${q.d}</span><span class="qnum">№ ${i+1}</span></div>
+        <div class="qtext" style="font-size:18px">${q.q}</div>
+        <div class="answers">${ans}</div>
+        <div class="explain ${ok?'':'bad'}"><div class="lbl">Пояснення</div><p>${q._orig.ex}</p></div>
+      </div>`;
+    }).join('');
+    z.innerHTML=`
+      <div class="reviewfilter">
+        <button class="chip ${filter==='all'?'on':''}" data-f="all">Усі (${T.questions.length})</button>
+        <button class="chip ${filter==='wrong'?'on':''}" data-f="wrong">Лише помилки</button>
+        <button class="chip ${filter==='blank'?'on':''}" data-f="blank">Без відповіді</button>
+      </div>
+      ${cards || '<p class="muted">Нічого немає в цьому фільтрі 🎉</p>'}`;
+    [...z.querySelectorAll('[data-f]')].forEach(b=>b.onclick=()=>{filter=b.dataset.f;draw();});
+  }
+  draw();
+}
+
+/* boot */
+renderHome();
+</script>
+</body>
+</html>
