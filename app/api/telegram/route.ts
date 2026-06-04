@@ -9,7 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { botMetaGet, botMetaSet } from '@/lib/store';
+import { botMetaGet, botMetaSet, logEvent } from '@/lib/store';
+import { getStats, formatStatsMessage, type Period } from '@/lib/stats';
 
 // ── Env ───────────────────────────────────────────────────────────────────────
 const TOKEN   = process.env.TELEGRAM_BOT_TOKEN ?? '';
@@ -252,6 +253,35 @@ async function forwardJob(msg: TgObj) {
   await send(owner, `🚀 <b>КАНДИДАТ</b>\n\nВід: ${senderInfo(msg)}\n\n${msg.text as string}\n\n↩️ Відповідь — реплаєм на це повідомлення`);
 }
 
+// ── Bot-події у сховище (для /stats) ─────────────────────────────────────────
+function botLog(type: string, uid: number | undefined, meta: Record<string, unknown> = {}) {
+  return logEvent({ type, session_id: uid ? String(uid) : undefined, ts: Date.now(), meta: { uid, ...meta } }).catch(() => {});
+}
+
+// ── /stats (owner-only) ──────────────────────────────────────────────────────
+const statsKb = (period: Period) => ({
+  inline_keyboard: [[
+    { text: period === '7' ? '· 7 днів ·' : '7 днів', callback_data: 'stats:7' },
+    { text: period === '30' ? '· 30 днів ·' : '30 днів', callback_data: 'stats:30' },
+    { text: period === 'all' ? '· Увесь час ·' : 'Увесь час', callback_data: 'stats:all' },
+  ]],
+});
+
+async function isOwner(chat: ID): Promise<boolean> {
+  const owner = await getOwner();
+  return Boolean(owner) && String(chat) === String(owner);
+}
+
+async function sendStats(chat: ID, period: Period) {
+  const s = await getStats(period);
+  await send(chat, formatStatsMessage(s), { reply_markup: statsKb(period) });
+}
+
+async function editStats(chat: ID, msgId: number, period: Period) {
+  const s = await getStats(period);
+  await edit(chat, msgId, formatStatsMessage(s), { reply_markup: statsKb(period) });
+}
+
 // Relay відповіді власника назад користувачу: парсимо [id: N] з тексту, на який реплай.
 async function relayOwnerReply(msg: TgObj): Promise<boolean> {
   const replyTo = msg.reply_to_message as TgObj | undefined;
@@ -291,12 +321,18 @@ async function handleMessage(msg: TgObj) {
   // Авто-захоплення owner_chat_id, якщо пише власник за username
   await maybeCaptureOwner(msg);
 
-  // Якщо це власник відповідає реплаєм на пересланий фідбек/заявку → relay назад
+  const uid = (msg.from as TgObj | undefined)?.id as number | undefined;
   const owner = await getOwner();
-  if (owner && String(chat) === String(owner) && replyTo) {
+  const ownerMsg = Boolean(owner) && String(chat) === String(owner);
+
+  // Якщо це власник відповідає реплаєм на пересланий фідбек/заявку → relay назад
+  if (ownerMsg && replyTo) {
     const relayed = await relayOwnerReply(msg);
     if (relayed) return;
   }
+
+  // Лог унікальних користувачів бота (не власник)
+  if (!ownerMsg) await botLog('bot_interaction', uid);
 
   // Відповідь на ForceReply-повідомлення бота
   if (replyTo) {
@@ -304,11 +340,13 @@ async function handleMessage(msg: TgObj) {
     const ctx = detectReplyContext(replyText);
     if (ctx.kind === 'feedback') {
       await forwardFeedback(msg, ctx.feedbackType);
+      await botLog('bot_feedback', uid, { feedbackType: ctx.feedbackType });
       await send(chat, T.feedbackThanks, { reply_markup: KB.back });
       return;
     }
     if (ctx.kind === 'job') {
       await forwardJob(msg);
+      await botLog('bot_job', uid);
       await send(chat, T.jobThanks, { reply_markup: KB.back });
       return;
     }
@@ -317,6 +355,12 @@ async function handleMessage(msg: TgObj) {
   // Команди
   const [cmd, param] = text.split(' ');
   const command = cmd?.toLowerCase();
+
+  // /stats — лише власник, у публічному меню не світиться
+  if (command === '/stats') {
+    if (!ownerMsg) { await send(chat, 'Команда недоступна.'); return; }
+    return sendStats(chat, '7');
+  }
 
   if (command === '/start') {
     const p = param?.trim() ?? '';
@@ -345,6 +389,14 @@ async function handleCallback(query: TgObj) {
   const qid    = query.id                  as string;
 
   await answerCB(qid);
+
+  // Перемикання періоду /stats (owner-only)
+  if (data.startsWith('stats:')) {
+    if (!(await isOwner(chat))) return;
+    const p = data.slice(6);
+    const period: Period = p === '30' ? '30' : p === 'all' ? 'all' : '7';
+    return editStats(chat, msgId, period);
+  }
 
   if (data === 'menu')     return showMenu(chat, msgId);
   if (data === 'donate')   return showDonate(chat, msgId);

@@ -3,6 +3,7 @@
  * Запуск: SHARE_SECRET=test npx tsx scripts/smoke.ts
  */
 import { signBadge, verifyBadge, sanitizeNick, tierForScore } from '../lib/share';
+import { formatStatsMessage, type Stats } from '../lib/stats';
 
 process.env.SHARE_SECRET = process.env.SHARE_SECRET || 'test-secret-for-smoke';
 
@@ -38,6 +39,26 @@ async function main() {
   check('HTML вирізається', !sanitizeNick('<b>hi</b>').value.includes('<'));
   check('нецензурщина відхиляється', sanitizeNick('fuck you').ok === false);
   check('довгий обрізається до 24', sanitizeNick('x'.repeat(50)).value.length <= 24);
+
+  console.log('— Форматування /stats —');
+  const sample: Stats = {
+    period: '7', attempts: 12, exams: 8, practices: 4, avgExamScore: 812,
+    tier: { champion: 1, gold: 2, silver: 3, bronze: 2, prep: 4 },
+    topSources: [['linkedin.com', 5], ['прямий', 4], ['t.co', 3]],
+    shareCreated: 6, shareClicked: 9,
+    shareByChannel: { linkedin: 4, facebook: 2, x: 1, download: 2 },
+    telegramClicked: 7, botUsers: 5, feedbacks: 2, jobApps: 1,
+  };
+  const msg = formatStatsMessage(sample);
+  check('містить заголовок', msg.includes('Статистика'));
+  check('період підставлено', msg.includes('останні 7 днів'));
+  check('екзамени', msg.includes('екзамен): 8'));
+  check('середній бал', msg.includes('812 / 1000'));
+  check('розподіл рівнів', msg.includes('🏆1') && msg.includes('🥉2'));
+  check('топ-джерело', msg.includes('linkedin.com: 5'));
+  check('канали шерінгу', msg.includes('LinkedIn 4') && msg.includes('FB 2') && msg.includes('X 1'));
+  check('бот: юзери/фідбек/заявки', msg.includes('користувачів: 5') && msg.includes('Фідбеків: 2') && msg.includes('кандидатів: 1'));
+  check('порожні → 0', formatStatsMessage({ ...sample, exams: 0, shareByChannel: {} }).includes('екзамен): 0'));
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
