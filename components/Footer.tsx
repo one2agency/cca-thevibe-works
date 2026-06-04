@@ -13,6 +13,7 @@ export default function Footer() {
         <nav className="f-links">
           <Link href="/">Головна</Link>
           <Link href="/format">Формат</Link>
+          <Link href="/dostup">Доступ</Link>
           <Link href="/domeny">Домени</Link>
           <Link href="/scenariyi">Сценарії</Link>
           <Link href="/pidgotovka">Підготовка</Link>

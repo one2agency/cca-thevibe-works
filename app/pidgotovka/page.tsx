@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { DOMAINS } from '@/lib/exam-bank';
 import Breadcrumb from '@/components/Breadcrumb';
 import JsonLd from '@/components/JsonLd';
+import ResourcesHub from '@/components/ResourcesHub';
 
 export const metadata: Metadata = {
   title: 'Як скласти CCA-F: план підготовки',
@@ -127,11 +128,17 @@ export default function PidgotovkaPage() {
           <a href="https://thevibe.works/solutions/ai-konsultant" rel="follow">theVibe.works</a>.
         </p>
 
-        <div style={{ marginTop: 24, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          <Link href="/trenazher" className="btn accent">Запустити тренажер →</Link>
-          <Link href="/domeny" className="btn ghost">Домени екзамену</Link>
-          <Link href="/format" className="btn ghost">Формат іспиту</Link>
-        </div>
+        <h2>Офіційні ресурси</h2>
+        <p>Куровані лінки на офіційні матеріали Anthropic. Як отримати доступ до іспиту — на сторінці{' '}
+          <Link href="/dostup">Як отримати доступ</Link>.</p>
+      </div>
+
+      <ResourcesHub />
+
+      <div style={{ marginTop: 32, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <Link href="/trenazher" className="btn accent">Запустити тренажер →</Link>
+        <Link href="/dostup" className="btn ghost">Як отримати доступ</Link>
+        <Link href="/format" className="btn ghost">Формат іспиту</Link>
       </div>
     </div>
   );
