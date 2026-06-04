@@ -11,6 +11,7 @@ export default function Header() {
           <Link href="/scenariyi">Сценарії</Link>
           <Link href="/pidgotovka">Підготовка</Link>
           <Link href="/faq">FAQ</Link>
+          <Link href="/exam-guide">Гід PDF</Link>
           <Link href="/trenazher" className="cta">Тренажер →</Link>
         </nav>
       </div>
