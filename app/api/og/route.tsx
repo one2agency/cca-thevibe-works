@@ -2,14 +2,14 @@ import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { ogFonts, OG_FONT_FAMILY } from '@/lib/og-fonts';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const title = searchParams.get('title') ?? 'CCA Тренажер';
   const sub = searchParams.get('sub') ?? 'Підготовка до Claude Certified Architect Foundations';
 
-  const fonts = await ogFonts();
+  const fonts = ogFonts();
   const fontFamily = OG_FONT_FAMILY;
 
   return new ImageResponse(

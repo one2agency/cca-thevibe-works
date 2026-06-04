@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { verifyBadge, tierForScore, flairForAccuracy, DISCLAIMER } from '@/lib/share';
 import { ogFonts, OG_FONT_FAMILY } from '@/lib/og-fonts';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function GET(
   _req: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
 
   const nick = (payload.nick || '').slice(0, 24);
 
-  const fonts = await ogFonts();
+  const fonts = ogFonts();
   const ff = OG_FONT_FAMILY;
 
   const imgOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
