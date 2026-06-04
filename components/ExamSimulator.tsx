@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { DOMAINS, SCEN, QB, PASS_SCALED, EXAM_DURATION_SEC, TOTAL_EXAM_QUESTIONS } from '@/lib/exam-bank';
 import type { Question } from '@/lib/exam-bank';
 import ShareBadge from './ShareBadge';
+import Flashcards from './Flashcards';
 import { track, getAttribution } from '@/lib/analytics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Screen = 'home' | 'config' | 'run' | 'review' | 'results';
+type Screen = 'home' | 'config' | 'run' | 'review' | 'results' | 'flashcards';
 type Mode = 'exam' | 'practice';
 type ScopeType = 'all' | 'domain' | 'scenario';
 interface Scope { type: ScopeType; val?: number; }
@@ -307,6 +308,11 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
     reportCompletion(r);
   }, [run, reportCompletion]);
 
+  // ── Flashcards ───────────────────────────────────────────────────────────────
+  if (screen === 'flashcards') {
+    return <Flashcards onExit={() => setScreen('home')} />;
+  }
+
   // ── Home ───────────────────────────────────────────────────────────────────
 
   if (screen === 'home') {
@@ -404,6 +410,18 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
             <h3>Режим практики</h3>
             <p>Відповідь і пояснення одразу після кожного питання. Можна фільтрувати за доменом чи сценарієм і обрати кількість.</p>
             <span className="btn">Налаштувати практику →</span>
+          </div>
+          <div className="card mode" onClick={() => setScreen('flashcards')} style={{ cursor: 'pointer' }}>
+            <div className="ic">🗂</div>
+            <h3>Флешкартки</h3>
+            <p>Інтервальне повторення: оцінюй себе «Легко / Норм / Важко». Складні картки повертаються частіше. Прогрес — у браузері.</p>
+            <span className="btn">Відкрити флешкартки →</span>
+          </div>
+          <div className="card mode" style={{ cursor: 'default', opacity: 0.6 }}>
+            <div className="ic">🏆</div>
+            <h3>Спільнота</h3>
+            <p>Глобальна статистика, лідерборд і найважчі питання — на окремій сторінці.</p>
+            <a href="/spilnota" className="btn ghost" onClick={e => e.stopPropagation()}>Відкрити спільноту →</a>
           </div>
         </div>
 
