@@ -25,13 +25,12 @@ export default function ProPage() {
       <div className="card" style={{ padding: '32px 36px', maxWidth: 680 }}>
         {/* Шапка з фото + соцмережами */}
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-          {/* TODO: замінити .svg-заглушку на справжнє фото /images/vitaliy-tsymbalyuk.jpg */}
           <img
-            src="/images/vitaliy-tsymbalyuk.svg"
+            src="/images/vitaliy-tsymbalyuk.jpg"
             alt="Віталій Цимбалюк"
             width={104}
             height={104}
-            style={{ width: 104, height: 104, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)', flex: '0 0 auto' }}
+            style={{ width: 104, height: 104, borderRadius: '50%', objectFit: 'cover', objectPosition: 'center top', border: '1px solid var(--line)', flex: '0 0 auto' }}
           />
           <div>
             <div style={{ fontFamily: 'var(--disp)', fontSize: 24, fontWeight: 700 }}>Віталій Цимбалюк</div>
