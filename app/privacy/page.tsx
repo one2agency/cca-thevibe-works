@@ -62,7 +62,7 @@ export default function PrivacyPage() {
         <p>
           Питання щодо приватності — напиши в{' '}
           <a href="https://t.me/ClaudeCA_ua_bot?start=feedback" target="_blank" rel="noopener">Telegram-бот</a>{' '}
-          або на <a href="mailto:tv@one2.agency">tv@one2.agency</a>.
+          або на <a href="mailto:sales@thevibe.works">sales@thevibe.works</a>.
         </p>
 
         <div style={{ marginTop: 32 }}>
