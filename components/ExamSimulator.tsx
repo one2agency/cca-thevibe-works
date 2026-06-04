@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DOMAINS, SCEN, QB, PASS_SCALED, EXAM_DURATION_SEC, TOTAL_EXAM_QUESTIONS } from '@/lib/exam-bank';
 import type { Question } from '@/lib/exam-bank';
 import ShareBadge from './ShareBadge';
@@ -179,10 +179,60 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION_SEC);
   const [reviewFilter, setReviewFilter] = useState<'all' | 'wrong' | 'blank'>('all');
   const [history, setHistory] = useState<SavedResult[]>([]);
+  const [blurred, setBlurred] = useState(false);
+
+  // Рефи для глобальних слухачів (клавіатура, focus-loss) без переприв'язки
+  const runRef = useRef(run);
+  const screenRef = useRef(screen);
+  runRef.current = run;
+  screenRef.current = screen;
 
   // Load history from localStorage on mount
   useEffect(() => {
     setHistory(loadHistory());
+  }, []);
+
+  // Клавіатурні шорткати (1–4 вибір, F флаг, ← → навігація) — у run-режимі
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const r = runRef.current;
+      if (!r || screenRef.current !== 'run') return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      const k = e.key;
+      if (k >= '1' && k <= '4') {
+        const idx = +k - 1;
+        if (r.mode !== 'exam' && r.locked[r.i]) return; // у практиці після перевірки — не міняти
+        setRun(p => p ? { ...p, answers: { ...p.answers, [p.i]: idx } } : null);
+        e.preventDefault();
+      } else if (k === 'f' || k === 'F' || k === 'а' || k === 'А') {
+        setRun(p => p ? { ...p, marked: { ...p.marked, [p.i]: !p.marked[p.i] } } : null);
+        e.preventDefault();
+      } else if (k === 'ArrowLeft') {
+        setRun(p => p && p.i > 0 ? { ...p, i: p.i - 1 } : p);
+      } else if (k === 'ArrowRight') {
+        setRun(p => p && p.i < p.questions.length - 1 ? { ...p, i: p.i + 1 } : p);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Focus-loss (proctor-style) — лише в екзамені
+  useEffect(() => {
+    function onHide() {
+      if (screenRef.current === 'run' && runRef.current?.mode === 'exam') {
+        setBlurred(true);
+        track('focus_loss', {});
+      }
+    }
+    function onVis() { if (document.hidden) onHide(); }
+    window.addEventListener('blur', onHide);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('blur', onHide);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   // Auto-start if URL params given
@@ -362,7 +412,7 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
           {domRows}
         </div>
 
-        <p className="footnote">Питання й пояснення створено на основі офіційного Exam Guide (домени, task statements, сценарії). Це навчальний тренажер, а не офіційні питання Anthropic. Scaled score — наближена лінійна модель (100 + частка правильних × 900); прохідний — {PASS_SCALED}.</p>
+        <p className="footnote">Питання й пояснення створено на основі офіційного Exam Guide (домени, task statements, сценарії). Це навчальний тренажер, а не офіційні питання Anthropic. Прохідний поріг — {PASS_SCALED}/1000 (офіційний). Бал тут рахується <b>лінійно</b> (кожне питання важить однаково), а на реальному іспиті питання важать неоднаково — тож бал тренажера наближений. За вгадування штрафу немає: питання без відповіді = неправильні, тож радимо відповідати на всі.</p>
       </div>
     );
   }
@@ -460,6 +510,27 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
 
     return (
       <div>
+        {/* Focus-loss оверлей (екзамен) */}
+        {isExam && blurred && (
+          <div
+            onClick={() => setBlurred(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 100, cursor: 'pointer',
+              background: 'rgba(35,29,22,0.86)', backdropFilter: 'blur(6px)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24,
+            }}
+          >
+            <div style={{ fontSize: 44, marginBottom: 12 }}>⏸</div>
+            <div style={{ color: '#f3ece0', fontFamily: 'var(--disp)', fontSize: 24, fontWeight: 600, maxWidth: '30ch' }}>
+              Екзамен-режим: не перемикай вкладки
+            </div>
+            <div style={{ color: '#cbb9a3', fontSize: 15, marginTop: 8, maxWidth: '40ch' }}>
+              На реальному іспиті перемикання вкладок фіксує проктор. Тут — без покарань, лише реалізм.
+            </div>
+            <span className="btn accent" style={{ marginTop: 20 }}>Повернутись до екзамену</span>
+          </div>
+        )}
+
         {/* Top bar */}
         <div className="topbar">
           <div className="inner">
@@ -537,6 +608,17 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
             </div>
           )}
 
+          {/* Підказка про шорткати */}
+          <div className="muted" style={{ fontSize: 12.5, marginTop: 14, fontFamily: 'var(--mono)' }}>
+            ⌨ <b>1–4</b> обрати варіант · <b>F</b> флаг · <b>← →</b> навігація
+          </div>
+
+          {isExam && (
+            <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+              Пояснення відкриються після завершення всіх {total} питань.
+            </div>
+          )}
+
           {/* Nav */}
           <div className="navrow">
             <button className="btn ghost" disabled={run.i === 0}
@@ -544,14 +626,12 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
               ← Назад
             </button>
 
-            {isExam && (
-              <button
-                className={`markbtn${run.marked[run.i] ? ' on' : ''}`}
-                onClick={() => setRun(r => r ? { ...r, marked: { ...r.marked, [r.i]: !r.marked[r.i] } } : null)}
-              >
-                {run.marked[run.i] ? '★ Позначено' : '☆ Позначити'}
-              </button>
-            )}
+            <button
+              className={`markbtn${run.marked[run.i] ? ' on' : ''}`}
+              onClick={() => setRun(r => r ? { ...r, marked: { ...r.marked, [r.i]: !r.marked[r.i] } } : null)}
+            >
+              {run.marked[run.i] ? '★ Позначено' : '☆ Позначити'}
+            </button>
 
             {isExam ? (
               <button className="btn" onClick={() => {
