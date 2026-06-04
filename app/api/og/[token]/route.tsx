@@ -62,7 +62,6 @@ async function render(params: Promise<{ token: string }>): Promise<Response> {
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
             {nick ? <div style={{ fontSize: 28, color: '#cbb9a3', marginBottom: 6 }}>{nick} кидає виклик:</div> : null}
             <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-              {seal('#c2511f', '#e0793f', flair.label)}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div style={{ fontSize: 96, fontWeight: 700, color: '#e0793f', lineHeight: 1 }}>{pct}%</div>
                 <div style={{ fontSize: 22, color: '#cbb9a3' }}>точність · {payload.correct}/{payload.total} правильних</div>
@@ -106,7 +105,6 @@ async function render(params: Promise<{ token: string }>): Promise<Response> {
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
           {nick ? <div style={{ fontSize: 28, color: '#5e5346', marginBottom: 6 }}>{nick} —</div> : null}
           <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-            {seal(accent, ring, tier.label)}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 92, fontWeight: 700, color: accent, lineHeight: 1 }}>{payload.score}</div>
               <div style={{ fontSize: 22, color: '#5e5346' }}>scaled score (100–1000)</div>
