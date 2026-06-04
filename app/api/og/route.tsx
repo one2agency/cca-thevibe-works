@@ -141,11 +141,72 @@ async function renderBadge(token: string, fonts: OgFontArr, ff: string): Promise
   const nick = (payload.nick || '').slice(0, 24);
   const opts = { width: 1200, height: 630, fonts, headers: IMMUTABLE };
 
-  // DIAGNOSTIC minimal
+  // Чип-лейбл рівня (pill, не коло — Satori давиться на borderRadius повного кола)
+  const chip = (bg: string, label: string) => (
+    <div style={{ display: 'flex', background: bg, color: '#fff', fontWeight: 700, fontSize: 24, padding: '12px 22px', borderRadius: 12 }}>{label}</div>
+  );
+
+  if (payload.kind === 'practice') {
+    const pct = Math.round(payload.correct / payload.total * 100);
+    const flair = flairForAccuracy(pct);
+    return new ImageResponse(
+      (
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '54px 64px', backgroundColor: '#231d16', fontFamily: ff, color: '#f3ece0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 26, color: '#e0793f' }}>CCA</div>
+            <div style={{ display: 'flex', flex: 1, height: 1, background: 'rgba(243,236,224,0.25)' }} />
+            <div style={{ fontSize: 13, color: '#cbb9a3' }}>ЧЕЛЕНДЖ · cca.thevibe.works</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
+            {nick ? <div style={{ display: 'flex', fontSize: 28, color: '#cbb9a3', marginBottom: 10 }}>{nick} кидає виклик:</div> : null}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+              <div style={{ display: 'flex', fontSize: 100, fontWeight: 700, color: '#e0793f', lineHeight: 1 }}>{pct}%</div>
+              {chip('#c2511f', flair.label)}
+            </div>
+            <div style={{ display: 'flex', fontSize: 22, color: '#cbb9a3', marginTop: 12 }}>точність · {payload.correct}/{payload.total} правильних</div>
+            <div style={{ display: 'flex', fontSize: 30, color: '#f3ece0', marginTop: 22, fontWeight: 700 }}>
+              {payload.scope ? `Практика: ${payload.scope}` : 'Практика CCA-F'} — а ти зможеш краще?
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {chip('#c2511f', 'Прийняти виклик →')}
+            <div style={{ display: 'flex', fontSize: 16, color: '#cbb9a3' }}>cca.thevibe.works/trenazher</div>
+          </div>
+        </div>
+      ),
+      opts,
+    );
+  }
+
+  const tier = tierForScore(payload.score);
+  const pass = payload.score >= 720;
+  const accent = pass ? '#3f7d4e' : '#c2511f';
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3ece0', fontFamily: ff }}>
-        <div style={{ fontSize: 64, fontWeight: 700, color: '#c2511f' }}>{payload.kind === 'practice' ? 'CHALLENGE TEST' : 'BADGE TEST'}</div>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '56px 64px', backgroundColor: '#f3ece0', fontFamily: ff }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontWeight: 700, fontSize: 26, color: '#c2511f' }}>CCA</div>
+          <div style={{ display: 'flex', flex: 1, height: 1, background: '#d8ccba' }} />
+          <div style={{ fontSize: 13, color: '#5e5346' }}>cca.thevibe.works</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
+          {nick ? <div style={{ display: 'flex', fontSize: 28, color: '#5e5346', marginBottom: 10 }}>{nick} —</div> : null}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+            <div style={{ display: 'flex', fontSize: 96, fontWeight: 700, color: accent, lineHeight: 1 }}>{payload.score}</div>
+            {chip(accent, tier.label)}
+          </div>
+          <div style={{ display: 'flex', fontSize: 22, color: '#5e5346', marginTop: 12 }}>scaled score (100–1000)</div>
+          <div style={{ display: 'flex', fontSize: 28, color: '#231d16', marginTop: 22, fontWeight: 700 }}>
+            {pass ? 'Прохідний результат на тренажері CCA-F' : 'Готуюсь до Claude Certified Architect'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {chip('#c2511f', 'Спробуй сам →')}
+            <div style={{ display: 'flex', fontSize: 16, color: '#9a3f18' }}>cca.thevibe.works/trenazher</div>
+          </div>
+          <div style={{ display: 'flex', fontSize: 13, color: '#8a7d6a' }}>{DISCLAIMER}</div>
+        </div>
       </div>
     ),
     opts,
