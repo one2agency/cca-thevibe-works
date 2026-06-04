@@ -5,7 +5,7 @@ import { DOMAINS, SCEN, QB, PASS_SCALED, EXAM_DURATION_SEC, TOTAL_EXAM_QUESTIONS
 import type { Question } from '@/lib/exam-bank';
 import ShareBadge from './ShareBadge';
 import Flashcards from './Flashcards';
-import { track, getAttribution } from '@/lib/analytics';
+import { track, getAttribution, getSessionId } from '@/lib/analytics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -181,6 +181,10 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
   const [reviewFilter, setReviewFilter] = useState<'all' | 'wrong' | 'blank'>('all');
   const [history, setHistory] = useState<SavedResult[]>([]);
   const [blurred, setBlurred] = useState(false);
+  // Лідерборд (на екрані результату повного екзамену)
+  const [lbNick, setLbNick] = useState('');
+  const [lbState, setLbState] = useState<'idle' | 'busy' | 'done' | 'error'>('idle');
+  const [lbError, setLbError] = useState('');
 
   // Рефи для глобальних слухачів (клавіатура, focus-loss) без переприв'язки
   const runRef = useRef(run);
@@ -296,7 +300,30 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
     setResult(r);
     setScreen('results');
     reportCompletion(r);
+    setLbState('idle'); setLbNick(''); setLbError('');
+    // Анонімні лічильники по питаннях (для «найважчих питань»)
+    try {
+      const results = run.questions.map((q, i) => ({ id: q.id, correct: run.answers[i] === q.correct }));
+      fetch('/api/exam-result', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ results, session_id: getSessionId() }),
+      }).catch(() => {});
+    } catch { /* ignore */ }
   }, [run, reportCompletion]);
+
+  async function joinLeaderboard() {
+    if (!result || result.practice) return;
+    setLbState('busy'); setLbError('');
+    try {
+      const res = await fetch('/api/leaderboard', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: result.scaled, nick: lbNick, session_id: getSessionId() }),
+      });
+      const data = await res.json();
+      if (data.ok) setLbState('done');
+      else { setLbState('error'); setLbError(data.error ?? 'Помилка'); }
+    } catch { setLbState('error'); setLbError('Не вдалося'); }
+  }
 
   const doFinishPractice = useCallback(() => {
     if (!run) return;
@@ -836,6 +863,30 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
         {result.practice
           ? <ShareBadge mode="practice" correct={result.correct} total={result.total} scopeLabel={result.scopeLabel ?? 'усі домени'} />
           : <ShareBadge score={result.scaled} pass={result.pass} />}
+
+        {/* Лідерборд — лише за повним екзаменом */}
+        {!result.practice && (
+          <div className="card" style={{ padding: '22px 24px', marginTop: 16 }}>
+            <h3 style={{ fontSize: 18, marginBottom: 4 }}>🏆 Потрапити в лідерборд</h3>
+            <p className="muted" style={{ fontSize: 14, marginTop: 0, marginBottom: 14 }}>
+              Додай свій бал {result.scaled} у публічний{' '}
+              <a href="/spilnota" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>лідерборд спільноти</a>.
+              Нікнейм добровільний.
+            </p>
+            {lbState === 'done' ? (
+              <p style={{ color: 'var(--good)', margin: 0 }}>✓ Додано! Дивись на <a href="/spilnota" target="_blank" rel="noopener" style={{ color: 'var(--accent)' }}>/spilnota</a>.</p>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input type="text" value={lbNick} onChange={e => setLbNick(e.target.value)} placeholder="Нікнейм" maxLength={24}
+                  style={{ flex: 1, minWidth: 160, padding: '11px 14px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--card)', fontFamily: 'var(--serif)', fontSize: 15 }} />
+                <button className="btn accent" onClick={joinLeaderboard} disabled={lbState === 'busy' || !lbNick.trim()}>
+                  {lbState === 'busy' ? 'Додаю…' : 'Додати →'}
+                </button>
+              </div>
+            )}
+            {lbState === 'error' && <p style={{ color: 'var(--bad)', fontSize: 14, margin: '10px 0 0' }}>{lbError}</p>}
+          </div>
+        )}
 
         {/* Answer review */}
         <div style={{ marginTop: 32 }}>

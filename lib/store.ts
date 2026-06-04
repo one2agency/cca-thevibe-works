@@ -112,3 +112,44 @@ export async function botMetaSet(key: string, value: string): Promise<void> {
   if (!r) return;
   await r.set(`cca:bot:${key}`, value);
 }
+
+// ── Лічильники по питаннях (анонімні, для «найважчих питань») ──────────────────
+export async function bumpQuestionStats(results: Array<{ id: string; correct: boolean }>): Promise<void> {
+  const r = redis();
+  if (!r) return;
+  const p = r.pipeline();
+  for (const x of results) {
+    p.hincrby('cca:qshown', x.id, 1);
+    if (!x.correct) p.hincrby('cca:qwrong', x.id, 1);
+  }
+  await p.exec().catch(() => {});
+}
+
+export interface QStat { id: string; shown: number; wrong: number; }
+export async function getQuestionStats(): Promise<QStat[]> {
+  const r = redis();
+  if (!r) return [];
+  const [shown, wrong] = await Promise.all([
+    r.hgetall<Record<string, number>>('cca:qshown').catch(() => ({})),
+    r.hgetall<Record<string, number>>('cca:qwrong').catch(() => ({})),
+  ]);
+  const s: Record<string, number> = shown ?? {};
+  const w: Record<string, number> = wrong ?? {};
+  return Object.keys(s).map(id => ({ id, shown: Number(s[id]) || 0, wrong: Number(w[id]) || 0 }));
+}
+
+// ── Лідерборд (лише повні екзамени; нік санітизований у API) ───────────────────
+export interface LbEntry { nick: string; score: number; date: number; }
+export async function addLeaderboard(nick: string, score: number): Promise<void> {
+  const r = redis();
+  if (!r) return;
+  const member = JSON.stringify({ nick, score, date: Date.now() } as LbEntry);
+  await r.zadd('cca:leaderboard', { score, member }).catch(() => {});
+}
+
+export async function getLeaderboard(limit = 20): Promise<LbEntry[]> {
+  const r = redis();
+  if (!r) return [];
+  const raw = await r.zrange<string[]>('cca:leaderboard', 0, limit - 1, { rev: true }).catch(() => [] as string[]);
+  return raw.map(m => { try { return typeof m === 'string' ? JSON.parse(m) : m; } catch { return null; } }).filter(Boolean) as LbEntry[];
+}

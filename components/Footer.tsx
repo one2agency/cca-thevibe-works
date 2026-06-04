@@ -17,6 +17,7 @@ export default function Footer() {
           <Link href="/scenariyi">Сценарії</Link>
           <Link href="/pidgotovka">Підготовка</Link>
           <Link href="/faq">FAQ</Link>
+          <Link href="/spilnota">Спільнота</Link>
           <Link href="/pro">Про автора</Link>
           <Link href="/trenazher">Тренажер</Link>
           <Link href="/privacy">Приватність</Link>

@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/pidgotovka`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/faq`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/pro`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
+    { url: `${BASE}/spilnota`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.6 },
     { url: `${BASE}/exam-guide`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.8 },
     { url: `${BASE}/privacy`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
   ];
