@@ -65,6 +65,16 @@ async function main() {
   check('бот: юзери/фідбек/заявки', msg.includes('користувачів: 5') && msg.includes('Фідбеків: 2') && msg.includes('кандидатів: 1'));
   check('порожні → 0', formatStatsMessage({ ...sample, exams: 0, shareByChannel: {} }).includes('екзамен): 0'));
 
+  console.log('— Admin-auth (веб-логін) —');
+  process.env.STATS_PASSWORD = 'test-password-123';
+  const { createSession, verifySession, checkPassword } = await import('../lib/admin-auth');
+  const sess = await createSession();
+  check('валідна сесія верифікується', (await verifySession(sess)) === true);
+  check('підроблена сесія → false', (await verifySession(sess.slice(0, -2) + 'zz')) === false);
+  check('порожня сесія → false', (await verifySession(undefined)) === false);
+  check('правильний пароль', checkPassword('test-password-123') === true);
+  check('хибний пароль', checkPassword('wrong') === false);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

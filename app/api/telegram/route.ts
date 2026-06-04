@@ -16,6 +16,7 @@ import { getStats, formatStatsMessage, type Period } from '@/lib/stats';
 const TOKEN   = process.env.TELEGRAM_BOT_TOKEN ?? '';
 const OWNER_ENV = process.env.OWNER_CHAT_ID ?? '';
 const OWNER_USERNAME = (process.env.OWNER_USERNAME ?? '').replace(/^@/, '').toLowerCase();
+const OWNER_CLAIM_TOKEN = process.env.OWNER_CLAIM_TOKEN ?? '';
 const SECRET  = process.env.WEBHOOK_SECRET ?? '';
 const JAR_URL = process.env.MONOBANK_JAR_URL ?? 'https://send.monobank.ua/jar/9uKqdVDC2W';
 
@@ -356,8 +357,23 @@ async function handleMessage(msg: TgObj) {
   const [cmd, param] = text.split(' ');
   const command = cmd?.toLowerCase();
 
+  // /claim <token> — детермінована реєстрація власника (надійніше за username)
+  if (command === '/claim') {
+    if (!OWNER_CLAIM_TOKEN) { await send(chat, '⚠️ Реєстрація власника не налаштована на сервері.'); return; }
+    const given = (param ?? '').trim();
+    // constant-time-ish порівняння
+    const ok = given.length === OWNER_CLAIM_TOKEN.length &&
+      given.split('').reduce((d, c, i) => d | (c.charCodeAt(0) ^ OWNER_CLAIM_TOKEN.charCodeAt(i)), 0) === 0;
+    if (!ok) { await send(chat, '❌ Невірний токен.'); return; }
+    await botMetaSet('owner_chat_id', String(chat)).catch(() => {});
+    await send(chat, '✅ Тебе зареєстровано як власника. Тепер доступна команда /stats.');
+    return;
+  }
+
   // /stats — лише власник, у публічному меню не світиться
   if (command === '/stats') {
+    const ownerSet = Boolean(await getOwner());
+    if (!ownerSet) { await send(chat, 'Спершу зареєструйся: надішли <code>/claim &lt;твій токен&gt;</code> (токен — у власника проєкту).'); return; }
     if (!ownerMsg) { await send(chat, 'Команда недоступна.'); return; }
     return sendStats(chat, '7');
   }

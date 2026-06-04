@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { storeReady, notDuplicate } from '@/lib/store';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { storeReady } from '@/lib/store';
 import { getStats, PERIOD_LABEL, type Period } from '@/lib/stats';
+import { verifySession, ADMIN_COOKIE } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,20 +12,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function StatsPage({ searchParams }: { searchParams: Promise<{ secret?: string; period?: string }> }) {
+export default async function StatsPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const sp = await searchParams;
-  const STATS_SECRET = process.env.STATS_SECRET ?? '';
-  const provided = sp.secret ?? '';
 
-  if (!STATS_SECRET) return <Locked msg="STATS_SECRET не налаштований на сервері." />;
+  // Доступ лише за валідною httpOnly-кукою (без секрета в URL)
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
+  if (!(await verifySession(token))) redirect('/admin/login');
 
-  // rate-limit перевірки секрета
-  if (provided) {
-    await notDuplicate(`stats-auth:${provided.slice(0, 8)}`, 2).catch(() => true);
-  }
-  if (provided !== STATS_SECRET) {
-    return <Locked msg={provided ? 'Невірний секрет.' : 'Додай ?secret=... до URL.'} />;
-  }
   if (!storeReady()) {
     return <Locked msg="Сховище ще не підключене (Upstash)." />;
   }
@@ -42,13 +38,18 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="page-wrap">
       <div className="page-header">
-        <h1>Статистика CCA Тренажера</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+          <h1>Статистика CCA Тренажера</h1>
+          <form method="POST" action="/api/admin/logout">
+            <button type="submit" className="chip" style={{ cursor: 'pointer' }}>Вийти</button>
+          </form>
+        </div>
         <p>Власна аналітика · {PERIOD_LABEL[period]} · read-only</p>
       </div>
 
       <div className="opts-inline" style={{ marginBottom: 20 }}>
         {(['7', '30', 'all'] as const).map(p => (
-          <a key={p} href={`?secret=${encodeURIComponent(provided)}&period=${p}`} className={`chip${period === p ? ' on' : ''}`}>
+          <a key={p} href={`?period=${p}`} className={`chip${period === p ? ' on' : ''}`}>
             {p === 'all' ? 'Увесь час' : `${p} днів`}
           </a>
         ))}
