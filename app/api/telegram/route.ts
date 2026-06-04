@@ -285,7 +285,7 @@ async function handleCallback(query: TgObj) {
   const msg    = query.message as TgObj;
   const chat   = (msg.chat   as TgObj).id  as number;
   const msgId  = msg.message_id            as number;
-  const data   = query.callback_data       as string;
+  const data   = query.data                as string;
   const qid    = query.id                  as string;
 
   await answerCB(qid);
