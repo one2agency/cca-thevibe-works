@@ -17,7 +17,7 @@ async function main() {
   console.log('— HMAC підпис/верифікація —');
   const tok = await signBadge({ score: 845, tier: 'silver', nick: 'Vitaliy', ts: 1700000000000 });
   const ok = await verifyBadge(tok);
-  check('roundtrip зберігає score', ok?.score === 845);
+  check('roundtrip зберігає score', (ok as { score?: number })?.score === 845);
   check('roundtrip зберігає nick', ok?.nick === 'Vitaliy');
 
   const tampered = tok.slice(0, -2) + (tok.endsWith('a') ? 'bb' : 'aa');
@@ -25,6 +25,11 @@ async function main() {
   check('підроблений підпис → null', bad === null);
 
   check('сміття → null', (await verifyBadge('garbage')) === null);
+
+  const ptok = await signBadge({ kind: 'practice', correct: 18, total: 20, scope: 'Домен 1', nick: 'Ola', ts: 1700000000000 });
+  const pp = await verifyBadge(ptok);
+  check('practice payload roundtrip', pp?.kind === 'practice' && (pp as { correct: number }).correct === 18);
+  check('practice підроблений → null', (await verifyBadge(ptok.slice(0, -2) + 'zz')) === null);
 
   console.log('— Рівні —');
   check('960 → champion', tierForScore(965).key === 'champion');

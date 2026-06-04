@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { verifyBadge, tierForScore, DISCLAIMER } from '@/lib/share';
+import { verifyBadge, tierForScore, flairForAccuracy, DISCLAIMER } from '@/lib/share';
 
 export const runtime = 'edge';
 
@@ -22,8 +22,6 @@ export async function GET(
   const payload = await verifyBadge(token);
   if (!payload) return new Response('Not found', { status: 404 });
 
-  const tier = tierForScore(payload.score);
-  const pass = payload.score >= 720;
   const nick = (payload.nick || '').slice(0, 24);
 
   const [bold, regular] = await Promise.all([loadFont(700), loadFont(400)]);
@@ -33,6 +31,53 @@ export async function GET(
   if (regular) fonts.push({ name: 'Inter', data: regular, weight: 400, style: 'normal' });
   const ff = fonts.length ? 'Inter' : 'sans-serif';
 
+  const imgOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
+
+  // ── ПРАКТИКА: гейміфікований челендж (темний фон, «а ти?») ──
+  if (payload.kind === 'practice') {
+    const pct = Math.round(payload.correct / payload.total * 100);
+    const flair = flairForAccuracy(pct);
+    return new ImageResponse(
+      (
+        <div style={{
+          width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+          padding: '54px 64px', backgroundColor: '#231d16',
+          backgroundImage: 'radial-gradient(700px 460px at 88% -10%, rgba(194,81,31,0.45) 0%, transparent 60%), radial-gradient(520px 520px at -8% 112%, rgba(194,81,31,0.22) 0%, transparent 55%)',
+          fontFamily: ff, color: '#f3ece0',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 26, color: '#e0793f', letterSpacing: '-0.02em' }}>CCA</div>
+            <div style={{ height: 1, flex: 1, background: 'rgba(243,236,224,0.25)' }} />
+            <div style={{ fontSize: 13, color: '#cbb9a3', letterSpacing: '0.14em', textTransform: 'uppercase' }}>челендж · cca.thevibe.works</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center' }}>
+            {nick ? <div style={{ fontSize: 28, color: '#cbb9a3', marginBottom: 4 }}>{nick} кидає виклик:</div> : null}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+              <div style={{ fontSize: 104 }}>{flair.emoji}</div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: 92, fontWeight: 700, color: '#e0793f', lineHeight: 1 }}>{pct}%</div>
+                <div style={{ fontSize: 22, color: '#cbb9a3' }}>точність · {payload.correct}/{payload.total} правильних · {flair.label}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 30, color: '#f3ece0', marginTop: 22, fontWeight: 700 }}>
+              {payload.scope ? `Практика: ${payload.scope}` : 'Практика CCA-F'} — а ти зможеш краще?
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: '#c2511f', color: '#fff', fontWeight: 700, fontSize: 16, padding: '9px 18px', borderRadius: 10 }}>Прийняти виклик →</div>
+            <div style={{ fontSize: 16, color: '#cbb9a3' }}>cca.thevibe.works/trenazher</div>
+          </div>
+        </div>
+      ),
+      imgOpts,
+    );
+  }
+
+  // ── ЕКЗАМЕН: грамота ──
+  const tier = tierForScore(payload.score);
+  const pass = payload.score >= 720;
   const accent = pass ? '#3f7d4e' : '#c2511f';
 
   return new ImageResponse(

@@ -3,11 +3,37 @@
  * Працює і на Edge, і на Node (Web Crypto).
  */
 
+// Екзамен-грамота
 export interface BadgePayload {
+  kind?: 'exam';
   score: number;       // scaled 100..1000
   tier: string;        // ключ рівня
   nick: string;        // санітизований нік (може бути '')
   ts: number;          // unix ms
+}
+
+// Практика-челендж (гейміфікований; БЕЗ scaled/прохідний)
+export interface PracticePayload {
+  kind: 'practice';
+  correct: number;
+  total: number;
+  scope: string;       // що тренував: домен/сценарій (санітизований лейбл)
+  nick: string;
+  ts: number;
+}
+
+export type AnyPayload = BadgePayload | PracticePayload;
+
+// Гейміфікований «рівень» за точністю практики (інший від медалей екзамену)
+export interface Flair { emoji: string; label: string; min: number; }
+export const FLAIRS: Flair[] = [
+  { emoji: '🔥', label: 'Вогонь',  min: 90 },
+  { emoji: '🎯', label: 'Влучно',  min: 75 },
+  { emoji: '💪', label: 'Прогрес', min: 50 },
+  { emoji: '📚', label: 'Вчуся',   min: 0  },
+];
+export function flairForAccuracy(pct: number): Flair {
+  return FLAIRS.find(f => pct >= f.min) ?? FLAIRS[FLAIRS.length - 1];
 }
 
 // ── Рівні ─────────────────────────────────────────────────────────────────────
@@ -93,7 +119,7 @@ function secret(): string {
 }
 
 /** payload → "base64url(payload).sig" */
-export async function signBadge(payload: BadgePayload): Promise<string> {
+export async function signBadge(payload: AnyPayload): Promise<string> {
   const json = JSON.stringify(payload);
   const data = b64url(new TextEncoder().encode(json));
   const sig = await hmac(data, secret());
@@ -101,7 +127,7 @@ export async function signBadge(payload: BadgePayload): Promise<string> {
 }
 
 /** Верифікація токена; null якщо підпис невалідний. */
-export async function verifyBadge(token: string): Promise<BadgePayload | null> {
+export async function verifyBadge(token: string): Promise<AnyPayload | null> {
   const dot = token.lastIndexOf('.');
   if (dot < 0) return null;
   const data = token.slice(0, dot);
@@ -114,8 +140,13 @@ export async function verifyBadge(token: string): Promise<BadgePayload | null> {
   if (diff !== 0) return null;
   try {
     const json = new TextDecoder().decode(b64urlDecode(data));
-    const p = JSON.parse(json) as BadgePayload;
-    if (typeof p.score !== 'number' || typeof p.ts !== 'number') return null;
+    const p = JSON.parse(json) as AnyPayload;
+    if (typeof p.ts !== 'number') return null;
+    if (p.kind === 'practice') {
+      if (typeof p.correct !== 'number' || typeof p.total !== 'number') return null;
+    } else {
+      if (typeof (p as BadgePayload).score !== 'number') return null;
+    }
     return p;
   } catch {
     return null;

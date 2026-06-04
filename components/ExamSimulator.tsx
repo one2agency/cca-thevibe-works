@@ -26,6 +26,7 @@ interface RunState {
   marked: Record<number, boolean>;
   locked: Record<number, boolean>;
   endTime: number;
+  scopeLabel?: string;
 }
 
 interface ResultData {
@@ -37,6 +38,14 @@ interface ResultData {
   questions: PreparedQ[];
   answers: Record<number, number>;
   practice: boolean;
+  scopeLabel?: string;
+}
+
+// Людський лейбл «що тренував» для челендж-картки
+function scopeLabelFor(scope: Scope): string {
+  if (scope.type === 'domain' && scope.val) return DOMAINS[scope.val]?.nameUk ?? `Домен ${scope.val}`;
+  if (scope.type === 'scenario' && scope.val) return `Сценарій ${scope.val}`;
+  return 'усі домени';
 }
 
 // Що зберігаємо в localStorage (без питань — вони важкі)
@@ -149,7 +158,7 @@ function calcResult(run: RunState, practice: boolean): ResultData {
   });
   const total = run.questions.length;
   const scaled = Math.round(100 + (correct / total) * 900);
-  return { correct, total, scaled, pass: scaled >= PASS_SCALED, byDom, questions: run.questions, answers: run.answers, practice };
+  return { correct, total, scaled, pass: scaled >= PASS_SCALED, byDom, questions: run.questions, answers: run.answers, practice, scopeLabel: run.scopeLabel };
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -182,14 +191,14 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
       const s: Scope = { type: 'domain', val: defaultDomain };
       const qs = buildPractice(s, 20);
       if (qs.length) {
-        setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0 });
+        setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0, scopeLabel: scopeLabelFor(s) });
         setScreen('run');
       }
     } else if (defaultScenario) {
       const s: Scope = { type: 'scenario', val: defaultScenario };
       const qs = buildPractice(s, 20);
       if (qs.length) {
-        setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0 });
+        setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0, scopeLabel: scopeLabelFor(s) });
         setScreen('run');
       }
     }
@@ -725,8 +734,10 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
           </div>
         </div>
 
-        {/* Бейдж — лише за повним екзаменом (не за короткою практикою) */}
-        {!result.practice && <ShareBadge score={result.scaled} pass={result.pass} />}
+        {/* Екзамен → грамота-бейдж; Практика → гейміфікований челендж */}
+        {result.practice
+          ? <ShareBadge mode="practice" correct={result.correct} total={result.total} scopeLabel={result.scopeLabel ?? 'усі домени'} />
+          : <ShareBadge score={result.scaled} pass={result.pass} />}
 
         {/* Answer review */}
         <div style={{ marginTop: 32 }}>
@@ -791,7 +802,7 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
   function startPractice() {
     const qs = buildPractice(scope, practiceCount);
     if (!qs.length) return;
-    setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0 });
+    setRun({ mode: 'practice', questions: qs, i: 0, answers: {}, marked: {}, locked: {}, endTime: 0, scopeLabel: scopeLabelFor(scope) });
     setScreen('run');
   }
 }
