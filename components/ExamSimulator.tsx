@@ -37,6 +37,59 @@ interface ResultData {
   practice: boolean;
 }
 
+// Що зберігаємо в localStorage (без питань — вони важкі)
+interface SavedResult {
+  date: string;       // ISO date
+  scaled: number;
+  pass: boolean;
+  correct: number;
+  total: number;
+  practice: boolean;
+  byDom: Record<number, { c: number; n: number }>;
+}
+
+const LS_KEY = 'cca_history';
+const MAX_HISTORY = 10;
+
+function loadHistory(): SavedResult[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveToHistory(r: ResultData) {
+  const entry: SavedResult = {
+    date: new Date().toISOString(),
+    scaled: r.scaled,
+    pass: r.pass,
+    correct: r.correct,
+    total: r.total,
+    practice: r.practice,
+    byDom: r.byDom,
+  };
+  const prev = loadHistory();
+  const next = [entry, ...prev].slice(0, MAX_HISTORY);
+  localStorage.setItem(LS_KEY, JSON.stringify(next));
+}
+
+// Агрегує слабкі домени по всій історії
+function calcWeakDomains(history: SavedResult[]): { domainId: number; pct: number }[] {
+  const agg: Record<number, { c: number; n: number }> = {};
+  for (const r of history) {
+    for (const [k, v] of Object.entries(r.byDom)) {
+      const d = +k;
+      agg[d] = agg[d] || { c: 0, n: 0 };
+      agg[d].c += v.c;
+      agg[d].n += v.n;
+    }
+  }
+  return Object.entries(agg)
+    .map(([k, v]) => ({ domainId: +k, pct: Math.round(v.c / v.n * 100) }))
+    .filter(x => x.pct < 70)
+    .sort((a, b) => a.pct - b.pct);
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function shuffle<T>(arr: T[]): T[] {
@@ -114,6 +167,12 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
   const [result, setResult] = useState<ResultData | null>(null);
   const [timeLeft, setTimeLeft] = useState(EXAM_DURATION_SEC);
   const [reviewFilter, setReviewFilter] = useState<'all' | 'wrong' | 'blank'>('all');
+  const [history, setHistory] = useState<SavedResult[]>([]);
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
 
   // Auto-start if URL params given
   useEffect(() => {
@@ -158,19 +217,28 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
 
   const doFinishExam = useCallback(() => {
     if (!run) return;
-    setResult(calcResult(run, false));
+    const r = calcResult(run, false);
+    saveToHistory(r);
+    setHistory(loadHistory());
+    setResult(r);
     setScreen('results');
   }, [run]);
 
   const doFinishPractice = useCallback(() => {
     if (!run) return;
-    setResult(calcResult(run, true));
+    const r = calcResult(run, true);
+    saveToHistory(r);
+    setHistory(loadHistory());
+    setResult(r);
     setScreen('results');
   }, [run]);
 
   // ── Home ───────────────────────────────────────────────────────────────────
 
   if (screen === 'home') {
+    const last = history[0] ?? null;
+    const weakDomains = calcWeakDomains(history);
+
     const domRows = Object.entries(DOMAINS).map(([k, v]) => (
       <div className="domrow" key={k}>
         <span className="tag" style={{ flex: '0 0 auto' }}>D{k}</span>
@@ -192,6 +260,63 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
           <div className="fact"><b>4&nbsp;/&nbsp;6</b><span>сценаріїв випадково</span></div>
           <div className="fact"><b>{QB.length}</b><span>питань у банку</span></div>
         </div>
+
+        {/* ── Прогрес із localStorage ── */}
+        {last && (
+          <div className="card" style={{ padding: '18px 22px', marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--ink2)', marginBottom: 4 }}>
+                {last.practice ? 'Остання практика' : 'Останній екзамен'} · {new Date(last.date).toLocaleDateString('uk-UA')}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ fontFamily: 'var(--disp)', fontSize: 36, fontWeight: 700, color: last.pass ? 'var(--good)' : 'var(--bad)' }}>{last.scaled}</span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--ink2)' }}>/ 1000 · {last.correct}/{last.total} правильних</span>
+              </div>
+              <div style={{ fontSize: 13, color: last.pass ? 'var(--good)' : 'var(--bad)', marginTop: 2 }}>
+                {last.pass ? '✓ Прохідний' : '✗ Нижче порогу 720'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {history.length > 1 && (
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--ink2)', alignSelf: 'center' }}>
+                  {history.filter(h => h.pass).length} / {history.length} спроб прохідних
+                </div>
+              )}
+              <button className="btn ghost" style={{ fontSize: 13, padding: '7px 13px' }}
+                onClick={() => { if (confirm('Очистити всю історію результатів?')) { localStorage.removeItem(LS_KEY); setHistory([]); } }}>
+                Очистити
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Слабкі домени ── */}
+        {weakDomains.length > 0 && (
+          <div className="card" style={{ padding: '16px 22px', marginTop: 12, borderLeft: '4px solid var(--accent)' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 10 }}>
+              Слабкі домени (нижче 70% по всій історії)
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {weakDomains.map(({ domainId, pct }) => (
+                <button
+                  key={domainId}
+                  className="chip"
+                  style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+                  onClick={() => {
+                    setScope({ type: 'domain', val: domainId });
+                    setPracticeCount(20);
+                    setScreen('config');
+                  }}
+                >
+                  D{domainId} · {DOMAINS[domainId].name.split(' ')[0]}… · <strong>{pct}%</strong>
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink2)', marginTop: 8 }}>
+              Натисни на домен — одразу відкриється практика по ньому
+            </div>
+          </div>
+        )}
 
         <div className="modegrid">
           <div className="card mode" onClick={startExam} style={{ cursor: 'pointer' }}>
