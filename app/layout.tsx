@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Fraunces, Newsreader } from 'next/font/google';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import JsonLd from '@/components/JsonLd';
 import './globals.css';
 
 const fraunces = Fraunces({
@@ -18,8 +19,10 @@ const newsreader = Newsreader({
   display: 'swap',
 });
 
+const OG_BASE = 'https://cca.thevibe.works';
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://cca.thevibe.works'),
+  metadataBase: new URL(OG_BASE),
   title: {
     default: 'CCA Тренажер — підготовка до Claude Certified Architect Foundations',
     template: '%s | CCA Тренажер',
@@ -29,7 +32,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'uk_UA',
     siteName: 'CCA Тренажер',
+    images: [{ url: `${OG_BASE}/api/og?title=CCA+%D0%A2%D1%80%D0%B5%D0%BD%D0%B0%D0%B6%D0%B5%D1%80`, width: 1200, height: 630 }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    images: [`${OG_BASE}/api/og?title=CCA+%D0%A2%D1%80%D0%B5%D0%BD%D0%B0%D0%B6%D0%B5%D1%80`],
+  },
+};
+
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'theVibe.works',
+  url: 'https://thevibe.works',
+  sameAs: ['https://thevibe.works'],
+  description: 'AI-автоматизація бізнес-процесів для компаній',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <JsonLd data={orgSchema} />
         <Header />
         <div className="wrap">
           {children}

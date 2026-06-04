@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   title: 'CCA Тренажер — підготовка до Claude Certified Architect Foundations',
   description: 'Тренажер для підготовки до сертифікації Claude Certified Architect Foundations: 96 питань, 5 доменів, режим екзамену і практики. Безкоштовно, українською.',
   alternates: { canonical: '/' },
-  openGraph: { url: 'https://cca.thevibe.works/' },
+  openGraph: {
+    url: 'https://cca.thevibe.works/',
+    images: [{ url: '/api/og?title=CCA+%D0%A2%D1%80%D0%B5%D0%BD%D0%B0%D0%B6%D0%B5%D1%80&sub=%D0%9F%D1%96%D0%B4%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%BA%D0%B0+%D0%B4%D0%BE+Claude+Certified+Architect+Foundations', width: 1200, height: 630 }],
+  },
+  twitter: { card: 'summary_large_image', images: ['/api/og?title=CCA+%D0%A2%D1%80%D0%B5%D0%BD%D0%B0%D0%B6%D0%B5%D1%80'] },
 };
 
 export default function HomePage() {

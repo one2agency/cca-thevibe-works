@@ -121,7 +121,13 @@ export default function PidgotovkaPage() {
           <li>Перші 10 хвилин — прочитай описи сценаріїв, щоб орієнтуватись у контексті.</li>
         </ul>
 
-        <div style={{ marginTop: 40, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <p style={{ marginTop: 32, padding: '16px 20px', background: 'var(--paper2)', borderRadius: 12, fontSize: 15 }}>
+          Якщо хочеш перейти від підготовки до реальних проєктів —
+          впровадженням AI-агентів і автоматизацією бізнес-процесів займається{' '}
+          <a href="https://thevibe.works/solutions/ai-konsultant" rel="follow">theVibe.works</a>.
+        </p>
+
+        <div style={{ marginTop: 24, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <Link href="/trenazher" className="btn accent">Запустити тренажер →</Link>
           <Link href="/domeny" className="btn ghost">Домени екзамену</Link>
           <Link href="/format" className="btn ghost">Формат іспиту</Link>

@@ -21,7 +21,7 @@ export default function Footer() {
           <Link href="/trenazher">Тренажер</Link>
         </nav>
         <div className="f-copy">
-          © 2025 · Розроблено{' '}
+          © {new Date().getFullYear()} · Розроблено{' '}
           <a href="https://thevibe.works" rel="follow">theVibe.works</a>
           {' '}· AI-автоматизація для бізнесу
         </div>

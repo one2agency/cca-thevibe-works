@@ -368,7 +368,9 @@ button { font-family: var(--serif); cursor: pointer; }
 .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
 
 .q-static { margin-top: 28px; padding: 24px; }
-.q-static .q-text { font-family: var(--disp); font-size: 18px; font-weight: 500; margin-bottom: 16px; line-height: 1.4; }
+/* selector covers both div.q-text (backward compat) and h3.q-text (semantic) */
+.q-static .q-text,
+.q-static h3.q-text { font-family: var(--disp); font-size: 18px; font-weight: 500; margin: 0 0 16px; line-height: 1.4; letter-spacing: normal; }
 .q-static .opt { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 15px; border: 1px solid var(--line); }
 .q-static .opt.correct { background: var(--goodbg); border-color: var(--good); }
 .q-static .opt .k { font-family: var(--mono); font-weight: 600; flex: 0 0 24px; color: var(--ink2); }
