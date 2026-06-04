@@ -18,7 +18,7 @@ export async function GET(
   const fonts = ogFonts();
   const ff = OG_FONT_FAMILY;
 
-  const imgOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
+  const imgOpts = { width: 1200, height: 630, fonts, emoji: 'noto', headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
 
   // ── ПРАКТИКА: гейміфікований челендж (темний фон, «а ти?») ──
   if (payload.kind === 'practice') {
@@ -114,7 +114,7 @@ export async function GET(
       </div>
     ),
     {
-      width: 1200, height: 630, fonts,
+      width: 1200, height: 630, fonts, emoji: 'noto',
       headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
     },
   );
