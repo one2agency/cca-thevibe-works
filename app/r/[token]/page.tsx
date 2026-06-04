@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   if (!payload) return { title: 'Картку не знайдено', robots: { index: false, follow: false } };
 
   const who = payload.nick ? `${payload.nick} — ` : '';
-  const ogImg = `/api/og/${token}`;
+  const ogImg = `/api/og?token=${token}`;
   let title: string;
   let description: string;
 

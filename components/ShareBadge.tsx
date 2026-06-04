@@ -106,7 +106,7 @@ export default function ShareBadge(props: Props) {
     if (!token) return;
     track('share_clicked', { channel: 'download', ...trackMeta });
     const a = document.createElement('a');
-    a.href = `/api/og/${token}`;
+    a.href = `/api/og?token=${token}`;
     a.download = isPractice ? `cca-challenge-${pct}.png` : `cca-badge-${props.score}.png`;
     document.body.appendChild(a); a.click(); a.remove();
   }
