@@ -19,6 +19,7 @@ export default function Footer() {
           <Link href="/faq">FAQ</Link>
           <Link href="/pro">Про автора</Link>
           <Link href="/trenazher">Тренажер</Link>
+          <Link href="/privacy">Приватність</Link>
         </nav>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
           <a

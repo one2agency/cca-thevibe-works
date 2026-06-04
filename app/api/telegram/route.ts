@@ -9,14 +9,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { botMetaGet, botMetaSet } from '@/lib/store';
 
 // ── Env ───────────────────────────────────────────────────────────────────────
 const TOKEN   = process.env.TELEGRAM_BOT_TOKEN ?? '';
-const OWNER   = process.env.OWNER_CHAT_ID ?? '';
+const OWNER_ENV = process.env.OWNER_CHAT_ID ?? '';
+const OWNER_USERNAME = (process.env.OWNER_USERNAME ?? '').replace(/^@/, '').toLowerCase();
 const SECRET  = process.env.WEBHOOK_SECRET ?? '';
 const JAR_URL = process.env.MONOBANK_JAR_URL ?? 'https://send.monobank.ua/jar/9uKqdVDC2W';
 
 const SITE = 'https://cca.thevibe.works';
+
+// Owner chat_id: спершу з bot_meta (auto-captured), потім env-фолбек.
+async function getOwner(): Promise<string> {
+  const fromStore = await botMetaGet('owner_chat_id').catch(() => null);
+  return fromStore || OWNER_ENV;
+}
 
 // ── Telegram API ──────────────────────────────────────────────────────────────
 
@@ -67,7 +75,9 @@ const T = {
 📚 Практика за доменом або сценарієм
 💾 Зберігає прогрес між сесіями
 
-Повністю безкоштовний.`,
+Повністю безкоштовний.
+
+🔒 Приватність: твої звернення бачить лише власник, щоб відповісти. Деталі — cca.thevibe.works/privacy`,
 
   feedbackPrompt: `💬 <b>Залишити фідбек</b>
 
@@ -218,21 +228,57 @@ function senderInfo(msg: TgObj): string {
   return `<a href="tg://user?id=${id}">${fullName}</a>${username ? ` (${username})` : ''} [id: ${id}]`;
 }
 
+function senderId(msg: TgObj): number | undefined {
+  return (msg.from as TgObj | undefined)?.id as number | undefined;
+}
+
 async function forwardFeedback(msg: TgObj, feedbackType: string) {
-  if (!OWNER) return;
+  const owner = await getOwner();
+  if (!owner) return;
   const labels: Record<string, string> = {
     bug: '🐛 Баг', idea: '💡 Ідея', question: '❓ Питання', general: '💬 Фідбек',
   };
   const label = labels[feedbackType] ?? '💬 Фідбек';
-  await send(OWNER, `${label} від ${senderInfo(msg)}\n\n${msg.text as string}`);
+  // [id:N] у тексті — щоб власник міг відповісти реплаєм, а бот зрелеїв назад
+  await send(owner, `${label} від ${senderInfo(msg)}\n\n${msg.text as string}\n\n↩️ Відповідь — реплаєм на це повідомлення`);
 }
 
 async function forwardJob(msg: TgObj) {
-  if (!OWNER) {
-    console.info('OWNER_CHAT_ID not set. Incoming message from:', (msg.from as TgObj)?.id, (msg.from as TgObj)?.username);
+  const owner = await getOwner();
+  if (!owner) {
+    console.info('owner not set yet; message from:', senderId(msg), (msg.from as TgObj)?.username);
     return;
   }
-  await send(OWNER, `🚀 <b>КАНДИДАТ</b>\n\nВід: ${senderInfo(msg)}\n\n${msg.text as string}`);
+  await send(owner, `🚀 <b>КАНДИДАТ</b>\n\nВід: ${senderInfo(msg)}\n\n${msg.text as string}\n\n↩️ Відповідь — реплаєм на це повідомлення`);
+}
+
+// Relay відповіді власника назад користувачу: парсимо [id: N] з тексту, на який реплай.
+async function relayOwnerReply(msg: TgObj): Promise<boolean> {
+  const replyTo = msg.reply_to_message as TgObj | undefined;
+  if (!replyTo) return false;
+  const srcText = (replyTo.text as string) ?? '';
+  const m = srcText.match(/\[id:\s*(\d+)\]/);
+  if (!m) return false;
+  const targetId = m[1];
+  const replyText = (msg.text as string) ?? '';
+  if (!replyText) return false;
+  await send(targetId, `💬 <b>Відповідь від команди CCA:</b>\n\n${replyText}`);
+  await send((msg.chat as TgObj).id as number, `✅ Відповідь надіслано користувачу [id: ${targetId}]`);
+  return true;
+}
+
+// Автозахоплення owner_chat_id за username
+async function maybeCaptureOwner(msg: TgObj): Promise<void> {
+  if (!OWNER_USERNAME) return;
+  const from = msg.from as TgObj | undefined;
+  const username = (from?.username as string | undefined)?.toLowerCase();
+  if (username && username === OWNER_USERNAME) {
+    const chatId = String((msg.chat as TgObj).id);
+    const current = await botMetaGet('owner_chat_id').catch(() => null);
+    if (current !== chatId) {
+      await botMetaSet('owner_chat_id', chatId).catch(() => {});
+    }
+  }
 }
 
 // ── Message handler ───────────────────────────────────────────────────────────
@@ -241,6 +287,16 @@ async function handleMessage(msg: TgObj) {
   const chat   = (msg.chat as TgObj).id as number;
   const text   = (msg.text as string) ?? '';
   const replyTo = msg.reply_to_message as TgObj | undefined;
+
+  // Авто-захоплення owner_chat_id, якщо пише власник за username
+  await maybeCaptureOwner(msg);
+
+  // Якщо це власник відповідає реплаєм на пересланий фідбек/заявку → relay назад
+  const owner = await getOwner();
+  if (owner && String(chat) === String(owner) && replyTo) {
+    const relayed = await relayOwnerReply(msg);
+    if (relayed) return;
+  }
 
   // Відповідь на ForceReply-повідомлення бота
   if (replyTo) {

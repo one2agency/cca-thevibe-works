@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DOMAINS, SCEN, QB, PASS_SCALED, EXAM_DURATION_SEC, TOTAL_EXAM_QUESTIONS } from '@/lib/exam-bank';
 import type { Question } from '@/lib/exam-bank';
+import ShareBadge from './ShareBadge';
+import { track, getAttribution } from '@/lib/analytics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -215,6 +217,17 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
+  const reportCompletion = useCallback((r: ResultData) => {
+    const attr = getAttribution();
+    track('exam_completed', {
+      mode: r.practice ? 'practice' : 'exam',
+      score: r.scaled,
+      tier: r.scaled >= 960 ? 'champion' : r.scaled >= 900 ? 'gold' : r.scaled >= 800 ? 'silver' : r.scaled >= 720 ? 'bronze' : 'prep',
+      domain_breakdown: r.byDom,
+      ...attr,
+    });
+  }, []);
+
   const doFinishExam = useCallback(() => {
     if (!run) return;
     const r = calcResult(run, false);
@@ -222,7 +235,8 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
     setHistory(loadHistory());
     setResult(r);
     setScreen('results');
-  }, [run]);
+    reportCompletion(r);
+  }, [run, reportCompletion]);
 
   const doFinishPractice = useCallback(() => {
     if (!run) return;
@@ -231,7 +245,8 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
     setHistory(loadHistory());
     setResult(r);
     setScreen('results');
-  }, [run]);
+    reportCompletion(r);
+  }, [run, reportCompletion]);
 
   // ── Home ───────────────────────────────────────────────────────────────────
 
@@ -670,6 +685,7 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
                   rel="noopener"
                   className="btn ghost"
                   style={{ fontSize: 14, textAlign: 'center', justifyContent: 'center' }}
+                  onClick={() => track('telegram_clicked', { source: 'results_feedback' })}
                 >
                   💬 Залишити фідбек
                 </a>
@@ -679,6 +695,7 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
                   rel="noopener"
                   className="btn ghost"
                   style={{ fontSize: 14, textAlign: 'center', justifyContent: 'center' }}
+                  onClick={() => track('telegram_clicked', { source: 'results_job' })}
                 >
                   🚀 Хочу працювати з AI
                 </a>
@@ -695,6 +712,9 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
             </div>
           </div>
         </div>
+
+        {/* Share badge */}
+        <ShareBadge score={result.scaled} pass={result.pass} />
 
         {/* Answer review */}
         <div style={{ marginTop: 32 }}>

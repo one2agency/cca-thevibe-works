@@ -3,6 +3,7 @@ import { Fraunces, Newsreader } from 'next/font/google';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JsonLd from '@/components/JsonLd';
+import AnalyticsInit from '@/components/AnalyticsInit';
 import './globals.css';
 
 const fraunces = Fraunces({
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <JsonLd data={orgSchema} />
+        <AnalyticsInit />
         <Header />
         <div className="wrap">
           {children}
