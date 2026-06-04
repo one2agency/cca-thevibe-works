@@ -663,6 +663,35 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
                 {result.practice ? 'Нова практика' : 'Новий екзамен'}
               </button>
               <button className="btn ghost" onClick={() => setScreen('home')}>На головну</button>
+              <div style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <a
+                  href="https://t.me/ClaudeCA_ua_bot?start=feedback"
+                  target="_blank"
+                  rel="noopener"
+                  className="btn ghost"
+                  style={{ fontSize: 14, textAlign: 'center', justifyContent: 'center' }}
+                >
+                  💬 Залишити фідбек
+                </a>
+                <a
+                  href="https://t.me/ClaudeCA_ua_bot?start=job"
+                  target="_blank"
+                  rel="noopener"
+                  className="btn ghost"
+                  style={{ fontSize: 14, textAlign: 'center', justifyContent: 'center' }}
+                >
+                  🚀 Хочу працювати з AI
+                </a>
+                <a
+                  href="https://send.monobank.ua/jar/9uKqdVDC2W"
+                  target="_blank"
+                  rel="noopener"
+                  className="btn ghost"
+                  style={{ fontSize: 14, textAlign: 'center', justifyContent: 'center' }}
+                >
+                  💛 Підтримати проєкт
+                </a>
+              </div>
             </div>
           </div>
         </div>

@@ -57,6 +57,39 @@ export default function ProPage() {
             </a>
             <Link href="/trenazher" className="btn ghost">Запустити тренажер</Link>
           </div>
+
+          <div style={{ marginTop: 28, borderTop: '1px solid var(--line)', paddingTop: 24 }}>
+            <h2 style={{ fontSize: 18, marginBottom: 14 }}>Зв&apos;язок і підтримка</h2>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <a
+                href="https://t.me/ClaudeCA_ua_bot?start=job"
+                target="_blank"
+                rel="noopener"
+                className="btn ghost"
+                style={{ fontSize: 15 }}
+              >
+                🚀 Хочу працювати з AI
+              </a>
+              <a
+                href="https://t.me/ClaudeCA_ua_bot?start=feedback"
+                target="_blank"
+                rel="noopener"
+                className="btn ghost"
+                style={{ fontSize: 15 }}
+              >
+                💬 Написати фідбек
+              </a>
+              <a
+                href="https://send.monobank.ua/jar/9uKqdVDC2W"
+                target="_blank"
+                rel="noopener"
+                className="btn ghost"
+                style={{ fontSize: 15 }}
+              >
+                💛 Підтримати проєкт
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

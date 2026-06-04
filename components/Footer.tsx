@@ -20,7 +20,35 @@ export default function Footer() {
           <Link href="/pro">Про автора</Link>
           <Link href="/trenazher">Тренажер</Link>
         </nav>
-        <div className="f-copy">
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+          <a
+            href="https://t.me/ClaudeCA_ua_bot?start=feedback"
+            target="_blank"
+            rel="noopener"
+            style={{ fontSize: 13, color: 'var(--ink2)', textDecoration: 'none', display: 'inline-flex', gap: 5, alignItems: 'center' }}
+          >
+            💬 Залишити фідбек
+          </a>
+          <span style={{ color: 'var(--line)' }}>·</span>
+          <a
+            href="https://send.monobank.ua/jar/9uKqdVDC2W"
+            target="_blank"
+            rel="noopener"
+            style={{ fontSize: 13, color: 'var(--ink2)', textDecoration: 'none' }}
+          >
+            💛 Підтримати
+          </a>
+          <span style={{ color: 'var(--line)' }}>·</span>
+          <a
+            href="https://t.me/ClaudeCA_ua_bot"
+            target="_blank"
+            rel="noopener"
+            style={{ fontSize: 13, color: 'var(--ink2)', textDecoration: 'none' }}
+          >
+            🤖 @ClaudeCA_ua_bot
+          </a>
+        </div>
+        <div className="f-copy" style={{ marginTop: 12 }}>
           © {new Date().getFullYear()} · Розроблено{' '}
           <a href="https://thevibe.works" rel="follow">theVibe.works</a>
           {' '}· AI-автоматизація для бізнесу
