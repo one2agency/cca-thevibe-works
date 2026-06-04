@@ -9,6 +9,14 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ): Promise<Response> {
+  try {
+    return await render(params);
+  } catch (err) {
+    return new Response('OG_ERROR: ' + (err instanceof Error ? `${err.message}\n${err.stack}` : String(err)), { status: 500 });
+  }
+}
+
+async function render(params: Promise<{ token: string }>): Promise<Response> {
   const { token } = await params;
   const payload = await verifyBadge(token);
   if (!payload) return new Response('Not found', { status: 404 });
