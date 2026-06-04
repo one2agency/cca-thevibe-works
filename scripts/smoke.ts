@@ -75,6 +75,21 @@ async function main() {
   check('правильний пароль', checkPassword('test-password-123') === true);
   check('хибний пароль', checkPassword('wrong') === false);
 
+  console.log('— Флешкартки (SM-2) —');
+  const { review } = await import('../lib/srs');
+  const now = 1_700_000_000_000;
+  const easy1 = review(undefined, 'easy', now);
+  const med1 = review(undefined, 'med', now);
+  const hard1 = review(undefined, 'hard', now);
+  check('hard → due зараз (interval 0)', hard1.interval === 0 && hard1.due === now);
+  check('med новий → 1 день', med1.interval === 1 && med1.due === now + 86400000);
+  check('easy новий → ≥2 дні', easy1.interval >= 2);
+  check('easy піднімає ease', easy1.ease > 2.5);
+  check('hard знижує ease', hard1.ease < 2.5 && hard1.ease >= 1.3);
+  const med2 = review(med1, 'med', now);
+  check('повторний med подовжує інтервал', med2.interval > med1.interval);
+  check('reps росте', med2.reps === 2);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

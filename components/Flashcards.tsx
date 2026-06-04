@@ -3,12 +3,11 @@
 import { useState, useMemo } from 'react';
 import { DOMAINS, SCEN, QB } from '@/lib/exam-bank';
 import type { Question } from '@/lib/exam-bank';
+import { review, type CardState } from '@/lib/srs';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 const LS_KEY = 'cca_flashcards';
-const DAY = 86400_000;
 
-interface CardState { ease: number; interval: number; due: number; reps: number; }
 type Store = Record<string, CardState>;
 
 function loadStore(): Store {
@@ -17,22 +16,6 @@ function loadStore(): Store {
 }
 function saveStore(s: Store) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
-}
-
-// SM-2-подібне оновлення
-function review(prev: CardState | undefined, grade: 'hard' | 'med' | 'easy', now: number): CardState {
-  const s: CardState = prev ?? { ease: 2.5, interval: 0, due: now, reps: 0 };
-  let { ease, interval } = s;
-  if (grade === 'hard') {
-    ease = Math.max(1.3, ease - 0.2);
-    interval = 0; // скоро знову (цієї ж сесії)
-  } else if (grade === 'med') {
-    interval = interval < 1 ? 1 : Math.round(interval * ease);
-  } else {
-    ease = ease + 0.1;
-    interval = interval < 1 ? 2 : Math.round(interval * ease * 1.4);
-  }
-  return { ease, interval, due: now + interval * DAY, reps: s.reps + 1 };
 }
 
 type Scope = { type: 'all' | 'domain' | 'scenario'; val?: number };
