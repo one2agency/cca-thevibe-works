@@ -625,7 +625,7 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
     const pct = Math.round(result.correct / result.total * 100);
     const C = 2 * Math.PI * 80;
     const off = C * (1 - result.correct / result.total);
-    const ringColor = result.pass ? 'var(--good)' : 'var(--bad)';
+    const ringColor = result.practice ? 'var(--accent)' : result.pass ? 'var(--good)' : 'var(--bad)';
 
     const filteredQs = result.questions.map((q, i) => ({ q, i, chosen: result.answers[i], ok: result.answers[i] === q.correct }))
       .filter(x => reviewFilter === 'all' ? true : reviewFilter === 'wrong' ? !x.ok : x.chosen == null);
@@ -643,11 +643,23 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
               <text x="90" y="108" textAnchor="middle" fontFamily="var(--mono)" fontSize="13" fill="var(--ink2)">{result.correct}/{result.total}</text>
             </svg>
           </div>
-          <div className="scaled">{result.scaled}</div>
-          <div className="muted" style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>scaled score (100–1000)</div>
-          <div className={`verdict ${result.pass ? 'pass' : 'fail'}`}>
-            {result.pass ? `✓ Прохідний (≥ ${PASS_SCALED})` : `✗ Нижче порогу ${PASS_SCALED}`}
-          </div>
+          {result.practice ? (
+            <>
+              <div className="scaled">{result.correct}<span style={{ fontSize: 28, color: 'var(--ink2)' }}>/{result.total}</span></div>
+              <div className="muted" style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>правильних відповідей</div>
+              <div className="muted" style={{ fontSize: 14, marginTop: 8, maxWidth: '46ch', marginInline: 'auto' }}>
+                Це практика на {result.total} {result.total === 1 ? 'питання' : result.total < 5 ? 'питання' : 'питань'} — бал «прохідний/720» рахується лише в режимі повного екзамену (60 питань).
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="scaled">{result.scaled}</div>
+              <div className="muted" style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>scaled score (100–1000)</div>
+              <div className={`verdict ${result.pass ? 'pass' : 'fail'}`}>
+                {result.pass ? `✓ Прохідний (≥ ${PASS_SCALED})` : `✗ Нижче порогу ${PASS_SCALED}`}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="resgrid">
@@ -713,8 +725,8 @@ export default function ExamSimulator({ defaultDomain, defaultScenario }: Props)
           </div>
         </div>
 
-        {/* Share badge */}
-        <ShareBadge score={result.scaled} pass={result.pass} />
+        {/* Бейдж — лише за повним екзаменом (не за короткою практикою) */}
+        {!result.practice && <ShareBadge score={result.scaled} pass={result.pass} />}
 
         {/* Answer review */}
         <div style={{ marginTop: 32 }}>
