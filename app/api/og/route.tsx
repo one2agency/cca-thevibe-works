@@ -1,34 +1,16 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import { ogFonts, OG_FONT_FAMILY } from '@/lib/og-fonts';
 
 export const runtime = 'edge';
-
-// Fetch Inter (has Cyrillic) from Google Fonts
-async function loadFont(weight: 400 | 700): Promise<ArrayBuffer | null> {
-  const url =
-    weight === 700
-      ? 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2'
-      : 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyAIZhjp-Ek-_EeA.woff2';
-  try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
-    if (!res.ok) return null;
-    return res.arrayBuffer();
-  } catch {
-    return null;
-  }
-}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const title = searchParams.get('title') ?? 'CCA Тренажер';
   const sub = searchParams.get('sub') ?? 'Підготовка до Claude Certified Architect Foundations';
 
-  const [bold, regular] = await Promise.all([loadFont(700), loadFont(400)]);
-  type FontDef = { name: string; data: ArrayBuffer; weight: 400 | 700; style: 'normal' };
-  const fonts: FontDef[] = [];
-  if (bold) fonts.push({ name: 'Inter', data: bold, weight: 700, style: 'normal' });
-  if (regular) fonts.push({ name: 'Inter', data: regular, weight: 400, style: 'normal' });
-  const fontFamily = fonts.length ? 'Inter' : 'sans-serif';
+  const fonts = await ogFonts();
+  const fontFamily = OG_FONT_FAMILY;
 
   return new ImageResponse(
     (

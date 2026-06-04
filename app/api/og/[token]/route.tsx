@@ -1,18 +1,9 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { verifyBadge, tierForScore, flairForAccuracy, DISCLAIMER } from '@/lib/share';
+import { ogFonts, OG_FONT_FAMILY } from '@/lib/og-fonts';
 
 export const runtime = 'edge';
-
-async function loadFont(weight: 400 | 700): Promise<ArrayBuffer | null> {
-  const url = weight === 700
-    ? 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2'
-    : 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyAIZhjp-Ek-_EeA.woff2';
-  try {
-    const r = await fetch(url, { next: { revalidate: 86400 } });
-    return r.ok ? r.arrayBuffer() : null;
-  } catch { return null; }
-}
 
 export async function GET(
   _req: NextRequest,
@@ -24,12 +15,8 @@ export async function GET(
 
   const nick = (payload.nick || '').slice(0, 24);
 
-  const [bold, regular] = await Promise.all([loadFont(700), loadFont(400)]);
-  type FontDef = { name: string; data: ArrayBuffer; weight: 400 | 700; style: 'normal' };
-  const fonts: FontDef[] = [];
-  if (bold) fonts.push({ name: 'Inter', data: bold, weight: 700, style: 'normal' });
-  if (regular) fonts.push({ name: 'Inter', data: regular, weight: 400, style: 'normal' });
-  const ff = fonts.length ? 'Inter' : 'sans-serif';
+  const fonts = await ogFonts();
+  const ff = OG_FONT_FAMILY;
 
   const imgOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
 
