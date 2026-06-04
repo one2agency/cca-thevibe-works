@@ -16,16 +16,20 @@ export async function GET(
   const nick = (payload.nick || '').slice(0, 24);
   const fonts = ogFonts();
   const ff = OG_FONT_FAMILY;
-  const baseOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } } as const;
+  const baseOpts = { width: 1200, height: 630, fonts, headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } };
 
   // Кольоровий «seal»-кружок замість емодзі (Satori не має емодзі-гліфів у TTF)
   const seal = (bg: string, ring: string, label: string) => (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: 132, height: 132, borderRadius: 132, backgroundColor: bg,
-      border: `6px solid ${ring}`, flex: '0 0 auto',
+      width: 132, height: 132, borderRadius: 66, backgroundColor: ring, flex: '0 0 auto',
     }}>
-      <div style={{ fontSize: 30, fontWeight: 700, color: '#fff', textAlign: 'center', lineHeight: 1.05, padding: '0 8px' }}>{label}</div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: 116, height: 116, borderRadius: 58, backgroundColor: bg,
+      }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', textAlign: 'center', lineHeight: 1.05 }}>{label}</div>
+      </div>
     </div>
   );
 
