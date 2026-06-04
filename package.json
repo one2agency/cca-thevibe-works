@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "tsx scripts/audit-bank.ts --lint",
     "build": "next build",
     "start": "next start",
+    "lint:bank": "tsx scripts/audit-bank.ts --lint",
     "setup-webhook": "tsx scripts/setup-webhook.ts",
     "smoke": "tsx scripts/smoke.ts"
   },
