@@ -51,6 +51,7 @@ export function getAttribution(): Attribution {
 
 export function track(type: string, meta: Record<string, unknown> = {}): void {
   if (typeof window === 'undefined') return;
+  // 1) Власна аналітика → /api/event (Upstash)
   try {
     const body = JSON.stringify({ type, session_id: getSessionId(), meta });
     // sendBeacon не дає виставити Content-Type; fetch keepalive надійніший для JSON
@@ -60,5 +61,11 @@ export function track(type: string, meta: Record<string, unknown> = {}): void {
       body,
       keepalive: true,
     }).catch(() => {});
+  } catch { /* ignore */ }
+  // 2) dataLayer → GTM/GA4 (подія = type, плюс плоскі параметри з meta)
+  try {
+    const w = window as unknown as { dataLayer?: Array<Record<string, unknown>> };
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({ event: type, ...meta });
   } catch { /* ignore */ }
 }
