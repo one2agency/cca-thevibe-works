@@ -48,19 +48,22 @@ export default function DostupPage() {
 
         <h2>Шлях доступу</h2>
         <p>
-          Доступ до іспиту наразі організований через екосистему партнерів і навчальну платформу Anthropic.
-          Загальна послідовність:
+          <strong>Anthropic Academy</strong> (<a href="https://anthropic.skilljar.com" target="_blank" rel="noopener">anthropic.skilljar.com</a>) —
+          це безкоштовна навчальна платформа з базовими курсами по Claude. Окремого «курсу Архітектора» там немає —
+          це <strong>сукупність усіх курсів</strong>, а повний доступ до сертифікаційного шляху Architect відкритий
+          <strong>лише компаніям</strong>, які стали або планують стати офіційними партнерами Anthropic.
         </p>
+        <p>Загальна послідовність доступу до іспиту:</p>
         <ol>
-          <li><strong>Claude Partner Network (CPN).</strong> Доступ зазвичай надається через партнерську програму — компанія подає заявку в CPN.</li>
-          <li><strong>Anthropic Academy.</strong> Після підтвердження — доступ до навчальної платформи (зазвичай за доменом корпоративної пошти).</li>
-          <li><strong>Learning Path.</strong> Проходження відповідного навчального шляху (колеги/команда).</li>
-          <li><strong>Форма завершення та валідація.</strong> Заповнення форми завершення; Anthropic валідує право на складання.</li>
-          <li><strong>Реєстрація на іспит.</strong> Після валідації — реєстрація на сесію іспиту.</li>
+          <li><strong>Базові курси — безкоштовно.</strong> Реєструйся на Anthropic Academy й проходь відкриті курси по Claude.</li>
+          <li><strong>Claude Partner Network (CPN).</strong> Повний шлях Architect доступний через партнерську програму — компанія стає (або планує стати) офіційним партнером.</li>
+          <li><strong>Learning Path + форма завершення.</strong> Проходження сертифікаційного шляху командою та заповнення форми завершення.</li>
+          <li><strong>Валідація Anthropic.</strong> Anthropic підтверджує право на складання.</li>
+          <li><strong>Реєстрація на іспит.</strong> Після валідації — реєстрація на сесію (оплата $99 за спробу).</li>
         </ol>
         <p className="muted" style={{ fontSize: 14 }}>
-          ⓘ Точні умови доступу визначає Anthropic і вони можуть змінюватись. Якщо ти не партнер CPN — уточни актуальний
-          шлях на офіційних ресурсах (нижче) або у свого Anthropic-контакту.
+          ⓘ Точні умови доступу визначає Anthropic і вони можуть змінюватись. Якщо твоя компанія не в CPN — почни з
+          безкоштовних курсів Academy, а щодо сертифікації звернись до свого Anthropic-контакту чи партнера.
         </p>
 
         <h2>Параметри іспиту</h2>
@@ -70,11 +73,15 @@ export default function DostupPage() {
             <tr><td><strong>Час</strong></td><td>120 хвилин</td></tr>
             <tr><td><strong>Бал</strong></td><td>scaled score 100–1000</td></tr>
             <tr><td><strong>Прохідний поріг</strong></td><td>720</td></tr>
-            <tr><td><strong>Вартість</strong></td><td>$99 <span className="muted">(уточни актуальну на офіційному сайті)</span></td></tr>
+            <tr><td><strong>Вартість</strong></td><td>$99 <strong>за кожну спробу</strong> (перескладання — ще $99)</td></tr>
             <tr><td><strong>Мова</strong></td><td>англійська</td></tr>
             <tr><td><strong>Формат</strong></td><td>online-proctored або тест-центр</td></tr>
           </tbody>
         </table>
+        <p style={{ padding: '14px 18px', background: 'var(--paper2)', borderRadius: 12, fontSize: 15 }}>
+          💡 Оскільки <strong>кожна спроба коштує $99</strong>, провалений іспит — це ще $99. Тому має сенс
+          відпрацювати формат заздалегідь у <Link href="/trenazher">безкоштовному тренажері</Link> і скласти з першого разу.
+        </p>
         <p>
           Детальніше про формат і розподіл доменів — на сторінці{' '}
           <Link href="/format">Формат екзамену</Link>, а як готуватись —{' '}
